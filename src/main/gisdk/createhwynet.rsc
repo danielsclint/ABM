@@ -540,6 +540,62 @@ Macro "add TOD attributes"
    strct = strct + {{"BAH3CST_MD", "Real", 14, 6, "True", , , , , , , null}}
    strct = strct + {{"BAH3CST_PM", "Real", 14, 6, "True", , , , , , , null}}               
    strct = strct + {{"BAH3CST_EV", "Real", 14, 6, "True", , , , , , , null}}
+
+   // AB Light Duty cost
+   strct = strct + {{"ABLDCST_EA", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"ABLDCST_AM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"ABLDCST_MD", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"ABLDCST_PM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"ABLDCST_EV", "Real", 14, 6, "True", , , , , , , null}}
+   
+   // BA Light Duty cost
+   strct = strct + {{"BALDCST_EA", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"BALDCST_AM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"BALDCST_MD", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"BALDCST_PM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"BALDCST_EV", "Real", 14, 6, "True", , , , , , , null}}
+
+   // AB LHD cost
+   strct = strct + {{"ABLHDCST_EA", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"ABLHDCST_AM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"ABLHDCST_MD", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"ABLHDCST_PM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"ABLHDCST_EV", "Real", 14, 6, "True", , , , , , , null}}
+   
+   // BA LHD cost
+   strct = strct + {{"BALHDCST_EA", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"BALHDCST_AM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"BALHDCST_MD", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"BALHDCST_PM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"BALHDCST_EV", "Real", 14, 6, "True", , , , , , , null}}
+
+   // AB MHD cost
+   strct = strct + {{"ABMHDCST_EA", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"ABMHDCST_AM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"ABMHDCST_MD", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"ABMHDCST_PM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"ABMHDCST_EV", "Real", 14, 6, "True", , , , , , , null}}
+   
+   // BA MHD cost
+   strct = strct + {{"BAMHDCST_EA", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"BAMHDCST_AM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"BAMHDCST_MD", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"BAMHDCST_PM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"BAMHDCST_EV", "Real", 14, 6, "True", , , , , , , null}}
+
+   // AB HHD cost
+   strct = strct + {{"ABHHDCST_EA", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"ABHHDCST_AM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"ABHHDCST_MD", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"ABHHDCST_PM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"ABHHDCST_EV", "Real", 14, 6, "True", , , , , , , null}}
+   
+   // BA HHD cost
+   strct = strct + {{"BAHHDCST_EA", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"BAHHDCST_AM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"BAHHDCST_MD", "Real", 14, 6, "True", , , , , , , null}}
+   strct = strct + {{"BAHHDCST_PM", "Real", 14, 6, "True", , , , , , , null}}               
+   strct = strct + {{"BAHHDCST_EV", "Real", 14, 6, "True", , , , , , , null}}
    
    // AB SOV Time
    strct = strct + {{"ABSTM_EA", "Real", 14, 6, "True", , , , , , , null}}
@@ -578,6 +634,14 @@ Macro "add TOD attributes"
                 {"BAH2CST_EA"},{"BAH2CST_AM"},{"BAH2CST_MD"},{"BAH2CST_PM"},{"BAH2CST_EV"},  
                 {"ABH3CST_EA"},{"ABH3CST_AM"},{"ABH3CST_MD"},{"ABH3CST_PM"},{"ABH3CST_EV"},  
                 {"BAH3CST_EA"},{"BAH3CST_AM"},{"BAH3CST_MD"},{"BAH3CST_PM"},{"BAH3CST_EV"},  
+                {"ABLDCST_EA"},{"ABLDCST_AM"},{"ABLDCST_MD"},{"ABLDCST_PM"},{"ABLDCST_EV"},
+                {"BALDCST_EA"},{"BALDCST_AM"},{"BALDCST_MD"},{"BALDCST_PM"},{"BALDCST_EV"},
+                {"ABLHDCST_EA"},{"ABLHDCST_AM"},{"ABLHDCST_MD"},{"ABLHDCST_PM"},{"ABLHDCST_EV"},
+                {"BALHDCST_EA"},{"BALHDCST_AM"},{"BALHDCST_MD"},{"BALHDCST_PM"},{"BALHDCST_EV"},
+                {"ABMHDCST_EA"},{"ABMHDCST_AM"},{"ABMHDCST_MD"},{"ABMHDCST_PM"},{"ABMHDCST_EV"},
+                {"BAMHDCST_EA"},{"BAMHDCST_AM"},{"BAMHDCST_MD"},{"BAMHDCST_PM"},{"BAMHDCST_EV"},
+                {"ABHHDCST_EA"},{"ABHHDCST_AM"},{"ABHHDCST_MD"},{"ABHHDCST_PM"},{"ABHHDCST_EV"},
+                {"BAHHDCST_EA"},{"BAHHDCST_AM"},{"BAHHDCST_MD"},{"BAHHDCST_PM"},{"BAHHDCST_EV"},  
                 {"ABSTM_EA"},{"ABSTM_AM"},{"ABSTM_MD"},{"ABSTM_PM"},{"ABSTM_EV"},  
                 {"BASTM_EA"},{"BASTM_AM"},{"BASTM_MD"},{"BASTM_PM"},{"BASTM_EV"},  
                 {"ABHTM_EA"},{"ABHTM_AM"},{"ABHTM_MD"},{"ABHTM_PM"},{"ABHTM_EV"},  
@@ -1367,7 +1431,27 @@ macro "create hwynet"
         {"*H3CST_AM", link_lyr+".ABH3CST_AM", link_lyr+".BAH3CST_AM"}, 
         {"*H3CST_MD", link_lyr+".ABH3CST_MD", link_lyr+".BAH3CST_MD"}, 
         {"*H3CST_PM", link_lyr+".ABH3CST_PM", link_lyr+".BAH3CST_PM"}, 
-        {"*H3CST_EV", link_lyr+".ABH3CST_EV", link_lyr+".BAH3CST_EV"}, 
+        {"*H3CST_EV", link_lyr+".ABH3CST_EV", link_lyr+".BAH3CST_EV"},
+        {"*LDSCST_EA", link_lyr+".ABLDSCST_EA", link_lyr+".BALDSCST_EA"}, 
+        {"*LDSCST_AM", link_lyr+".ABLDSCST_AM", link_lyr+".BALDSCST_AM"}, 
+        {"*LDSCST_MD", link_lyr+".ABLDSCST_MD", link_lyr+".BALDSCST_MD"}, 
+        {"*LDSCST_PM", link_lyr+".ABLDSCST_PM", link_lyr+".BALDSCST_PM"}, 
+        {"*LDSCST_EV", link_lyr+".ABLDSCST_EV", link_lyr+".BALDSCST_EV"}, 
+        {"*LHDSCST_EA", link_lyr+".ABLHDSCST_EA", link_lyr+".BALHDSCST_EA"}, 
+        {"*LHDSCST_AM", link_lyr+".ABLHDSCST_AM", link_lyr+".BALHDSCST_AM"}, 
+        {"*LHDSCST_MD", link_lyr+".ABLHDSCST_MD", link_lyr+".BALHDSCST_MD"}, 
+        {"*LHDSCST_PM", link_lyr+".ABLHDSCST_PM", link_lyr+".BALHDSCST_PM"}, 
+        {"*LHDSCST_EV", link_lyr+".ABLHDSCST_EV", link_lyr+".BALHDSCST_EV"}, 
+        {"*MHDSCST_EA", link_lyr+".ABMHDSCST_EA", link_lyr+".BAMHDSCST_EA"}, 
+        {"*MHDSCST_AM", link_lyr+".ABMHDSCST_AM", link_lyr+".BAMHDSCST_AM"}, 
+        {"*MHDSCST_MD", link_lyr+".ABMHDSCST_MD", link_lyr+".BAMHDSCST_MD"}, 
+        {"*MHDSCST_PM", link_lyr+".ABMHDSCST_PM", link_lyr+".BAMHDSCST_PM"}, 
+        {"*MHDSCST_EV", link_lyr+".ABMHDSCST_EV", link_lyr+".BAMHDSCST_EV"}, 
+        {"*HHDSCST_EA", link_lyr+".ABHHDSCST_EA", link_lyr+".BAHHDSCST_EA"}, 
+        {"*HHDSCST_AM", link_lyr+".ABHHDSCST_AM", link_lyr+".BAHHDSCST_AM"}, 
+        {"*HHDSCST_MD", link_lyr+".ABHHDSCST_MD", link_lyr+".BAHHDSCST_MD"}, 
+        {"*HHDSCST_PM", link_lyr+".ABHHDSCST_PM", link_lyr+".BAHHDSCST_PM"}, 
+        {"*HHDSCST_EV", link_lyr+".ABHHDSCST_EV", link_lyr+".BAHHDSCST_EV"},  
         {"*STM_EA", link_lyr+".ABSTM_EA", link_lyr+".BASTM_EA"}, 
         {"*STM_AM", link_lyr+".ABSTM_AM", link_lyr+".BASTM_AM"}, 
         {"*STM_MD", link_lyr+".ABSTM_MD", link_lyr+".BASTM_MD"}, 

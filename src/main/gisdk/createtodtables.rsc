@@ -110,12 +110,12 @@ Macro "Create Auto Tables"
 	outMatrixNames = {"Trip_EA.mtx", "Trip_AM.mtx", "Trip_MD.mtx", "Trip_PM.mtx", "Trip_EV.mtx"}                                                                                                   
 	outTableNames = {"SOV_GP", "SOV_PAY", "SR2_GP","SR2_HOV", "SR2_PAY", "SR3_GP","SR3_HOV","SR3_PAY","lhdn","mhdn","hhdn","lhdt","mhdt","hhdt"}
 
-   commVehTable = outputDir+"\\commVehTODTrips.mtx"
-   commVehMatrices = {"EA NonToll","AM NonToll","MD NonToll","PM NonToll","EV NonToll","EA Toll","AM Toll","MD Toll","PM Toll","EV Toll"}
+//   commVehTable = outputDir+"\\commVehTODTrips.mtx"
+//   commVehMatrices = {"EA NonToll","AM NonToll","MD NonToll","PM NonToll","EV NonToll","EA Toll","AM Toll","MD Toll","PM Toll","EV Toll"}
 
 	// create comm vehicle matrix currencies
-   commVehMatrix = OpenMatrix(commVehTable, )                                                               
-   commVehCurrencies = CreateMatrixCurrencies(commVehMatrix, , , )
+//   commVehMatrix = OpenMatrix(commVehTable, )                                                               
+//   commVehCurrencies = CreateMatrixCurrencies(commVehMatrix, , , )
 
 
    for i = 1 to periods.length do
@@ -174,7 +174,7 @@ Macro "Create Auto Tables"
                             + Nz(externalInternalWrkCurrencies.("DAN"))
                             + Nz(externalInternalNonCurrencies.("DAN"))
                             + Nz(externalExternalCurrency) * externalExternalDiurnalFactors[i] * externalExternalOccupancyFactors[1]
-                            + Nz(commVehCurrencies.(commVehMatrices[i])) 
+//                            + Nz(commVehCurrencies.(commVehMatrices[i])) 
                        
       outCurrencies.SOV_PAY :=Nz(outCurrencies.SOV_PAY)
       outCurrencies.SOV_PAY := Nz(personCurrencies.("SOV_PAY"+periods[i])) 
@@ -184,7 +184,7 @@ Macro "Create Auto Tables"
                             + Nz(internalExternalCurrencies.("SOV_PAY"+periods[i])) 
                             + Nz(externalInternalWrkCurrencies.("DAT"))
                             + Nz(externalInternalNonCurrencies.("DAT"))
-                            + Nz(commVehCurrencies.(commVehMatrices[i+5]))
+//                            + Nz(commVehCurrencies.(commVehMatrices[i+5]))
 
       outCurrencies.SR2_GP :=Nz(outCurrencies.SR2_GP)
       outCurrencies.SR2_GP := Nz(personCurrencies.("SR2_GP"+periods[i])) 
