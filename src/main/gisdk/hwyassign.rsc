@@ -10,7 +10,7 @@ input files: hwy.dbd
    Trip_PM.mtx: PM Peak  auto trip matrix file 
    Trip_EV.mtx: Evening  auto trip matrix file 
 
-each file has 14 cores:
+each file has 17 cores:
 
  Name     Description
  -------  ---------------------------------------
@@ -22,12 +22,20 @@ each file has 14 cores:
  SR3_GP   Shared-ride 3+ Person Non-HOV Non-Toll
  SR2_HOV  Shared-ride 3+ Person HOV Non-Toll
  SR2_PAY  Shared-ride 3+ Person HOV Toll Eligible
- lhdn     Light heavy-duty Truck Non-Toll
- mhdn     Medium heavy-duty Truck Non-Toll
- hhdnv    Heavy heavy-duty Truck Non-Toll
- lhdt     Light heavy-duty Truck Toll
- mhdt     Medium heavy-duty Truck Toll
- hhdt     Heavy heavy-duty Truck Toll
+ lhdn     External Light heavy-duty Truck Non-Toll
+ mhdn     External Medium heavy-duty Truck Non-Toll
+ hhdnv    External Heavy heavy-duty Truck Non-Toll
+ lhdt     External Light heavy-duty Truck Toll
+ mhdt     External Medium heavy-duty Truck Toll
+ hhdt     External Heavy heavy-duty Truck Toll
+ CVM:LT
+ CVM:MT
+ CVM:HT
+ CVM:LN
+ CVM:MN
+ CVM:HN
+ ExtLDN   External Light Duty Commercial Non-Toll
+ ExtLDT   External Light Duty Commercial Toll
 
  Functions are added by J Xu between Dec 2006 and March 2007
  (1) Select Link Analysis and split the resulting flow table by each select link inquiries;
@@ -76,8 +84,9 @@ Macro "hwy assignment" (args)
    RunMacro("close all") 
    dim excl_qry[periods.length],excl_toll[periods.length],excl_dat[periods.length],excl_s2nh[periods.length],excl_s2th[periods.length],excl_s3nh[periods.length]
    dim excl_s3th[periods.length],excl_lhdn[periods.length],excl_mhdn[periods.length],excl_hhdn[periods.length],excl_lhdt[periods.length],excl_mhdt[periods.length]
-   dim excl_hhdt[periods.length],toll_fld[periods.length],toll_fld2[periods.length]
-   
+   dim excl_hhdt[periods.length],toll_fld[periods.length],toll_fld2[periods.length],excl_cvmLT[periods.length],excl_cvmMT[periods.length],excl_cvmHT[periods.length]
+   dim excl_cvmLN[periods.length],excl_cvmMN[periods.length],excl_cvmHN[periods.length]
+
    linkt=  {"*TM_EA","*TM_AM","*TM_MD","*TM_PM","*TM_EV"}
    linkcap={"*CP_EA","*CP_AM","*CP_MD","*CP_PM","*CP_EV"}
 //   xt=     {"*TX_EA","*TX_AM","*TX_MD","*TX_PM","*TX_EV"}
@@ -111,7 +120,7 @@ Macro "hwy assignment" (args)
    db_node_lyr=db_file+"|"+node_lyr
    
    // drive-alone non-toll exclusion set
-   excl_dan={db_link_lyr, link_lyr, "dan", "Select * where !(ihov = 1)"}
+    excl_dan={db_link_lyr, link_lyr, "dan", "Select * where !((ihov=1|ifc>7) & ITRUCK<5)"}
    
    // shared-2 non-toll non-HOV exclusion set 
    excl_s2nn=excl_dan
@@ -153,7 +162,24 @@ Macro "hwy assignment" (args)
    
       // heavy-heavy truck toll exclusion set
       excl_hhdt[i]={db_link_lyr, link_lyr, "hhd", "Select * where !(((ihov=1|ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))|ifc>7)&(ITRUCK=1|ITRUCK>4))"}
+
+      // CVM Light Vehicle exclusion set
+      excl_cvmLT[i]={db_link_lyr, link_lyr, "CVM:LT", "Select * where !(((ihov=1|ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))|ifc>7)&ITRUCK<5)"}
+ 
+      // CVM Medium Truck (Medium and Light Heavy Duty) exclusion set
+      excl_cvmMT[i]={db_link_lyr, link_lyr, "CVM:MT", "Select * where !(((ihov=1|ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))|ifc>7) & (ITRUCK<4|ITRUCK=7))"}
    
+      // CVM Heavy Truck exclusion set
+      excl_cvmHT[i]={db_link_lyr, link_lyr, "CVM:HT", "Select * where !(((ihov=1|ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))|ifc>7)&(ITRUCK=1|ITRUCK>4))"}
+
+      // CVM Light Vehicle exclusion set
+      excl_cvmLN[i]={db_link_lyr, link_lyr, "CVM:LN", "Select * where !((ihov=1|ifc>7) & ITRUCK<5)"}
+ 
+      // CVM Medium Truck (Medium and Light Heavy Duty) exclusion set
+      excl_cvmMN[i]={db_link_lyr, link_lyr, "CVM:MN", "Select * where !((ihov=1|ifc>7)&(ITRUCK<4|ITRUCK=7))"}
+   
+      // CVM Heavy Truck exclusion set
+      excl_cvmHN[i]={db_link_lyr, link_lyr, "CVM:HN", "Select * where !((ihov=1|ifc>7)&(ITRUCK=1|ITRUCK>4))"}
    end
 
    //reset exclusion array value based on the selection set results 
@@ -162,7 +188,7 @@ Macro "hwy assignment" (args)
    vw_set = link_lyr + "|" + set
    SetLayer(link_lyr)
    for i = 1 to periods.length do
-      n = SelectByQuery(set, "Several","Select * where !((ihov=1|ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))|ifc>7)",)
+      n = SelectByQuery(set, "Several","Select * where !(((ihov=1|ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))|ifc>7)&ITRUCK<5)",)
       if n = 0 then excl_dat[i]=null
    end
           
@@ -170,7 +196,7 @@ Macro "hwy assignment" (args)
    vw_set = link_lyr + "|" + set
    SetLayer(link_lyr)
    for i = 1 to periods.length do
-      n = SelectByQuery(set, "Several","Select * where !(ihov=1|(ihov=2&abln"+periods[i]+"<9)|ifc>7)",)
+      n = SelectByQuery(set, "Several","Select * where !((ihov=1|(ihov=2&abln"+periods[i]+" <9)|ifc>7)&ITRUCK<5)",)
       if n = 0 then excl_s2nh[i]=null 
    end
           
@@ -178,7 +204,7 @@ Macro "hwy assignment" (args)
    vw_set = link_lyr + "|" + set
    SetLayer(link_lyr)
    for i = 1 to periods.length do
-      n = SelectByQuery(set, "Several", "Select * where !((ihov=1|(ihov=2&abln"+periods[i]+"<9)|ihov=4|(ihov=3&itoll"+periods[i]+">0&abln"+periods[i]+"<9))|ifc>7)",)
+      n = SelectByQuery(set, "Several", "Select * where !(((ihov=1|(ihov=2&abln"+periods[i]+"<9)|ihov=4|(ihov=3&itoll"+periods[i]+">0&abln"+periods[i]+"<9))|ifc>7)&ITRUCK<5)",)
       if n = 0 then excl_s2th[i]=null   
    end  
       
@@ -186,7 +212,7 @@ Macro "hwy assignment" (args)
    vw_set = link_lyr + "|" + set
    SetLayer(link_lyr)
    for i = 1 to periods.length do
-      n = SelectByQuery(set, "Several","Select * where !(ihov=1|((ihov=2|ihov=3)&abln"+periods[i]+"<9)|ifc>7)",)
+      n = SelectByQuery(set, "Several","Select * where !((ihov=1|((ihov=2|ihov=3)&abln"+periods[i]+"<9)|ifc>7)& ITRUCK<5)",)
       if n = 0 then excl_s3nh[i]=null 
    end         
    
@@ -194,26 +220,25 @@ Macro "hwy assignment" (args)
    vw_set = link_lyr + "|" + set
    SetLayer(link_lyr)
    for i = 1 to periods.length do
-      n = SelectByQuery(set, "Several", "Select * where abln"+periods[i]+"=9",)
+      n = SelectByQuery(set, "Several", "Select * where abln"+periods[i]+"=9|ITRUCK>4",)
       if n = 0 then excl_s3th[i]=null   
    end                                                                    
    
    for i = 1 to periods.length do
-      // to use 14 classes
-      excl_qry[i]={excl_dan,excl_dat[i],excl_s2nn,excl_s2nh[i],excl_s2th[i],excl_s3nn,excl_s3nh[i],excl_s3th[i],excl_lhdn[i],excl_mhdn[i],excl_hhdn[i],excl_lhdt[i],excl_mhdt[i],excl_hhdt[i]}
+      // to use 22 classes
+      excl_qry[i]={excl_dan,excl_dat[i],excl_s2nn,excl_s2nh[i],excl_s2th[i],excl_s3nn,excl_s3nh[i],excl_s3th[i],excl_lhdn[i],excl_mhdn[i],excl_hhdn[i],excl_lhdt[i],excl_mhdt[i],excl_hhdt[i],excl_cvmLT[i],excl_cvmMT[i],excl_cvmHT[i],excl_cvmLN[i],excl_cvmMN[i],excl_cvmHN[i],excl_dan,excl_dat[i]}
    end
      
-   vehclass={1,2,3,4,5,6,7,8,9,10,11,12,13,14}
-   
+   vehclass={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22}
+   num_class = vehclass.length   
+
    for i = 1 to periods.length do
       // to use 14 classes  
-      toll_fld2[i]= {"COST","ITOLL3"+periods[i],"COST","COST","ITOLL3"+periods[i],"COST","COST","ITOLL3"+periods[i],"COST","COST","COST","ITOLL3"+periods[i],"ITOLL4"+periods[i],"ITOLL5"+periods[i]}
+      toll_fld2[i]= {"COST","ITOLL3"+periods[i],"COST","COST","ITOLL3"+periods[i],"COST","COST","ITOLL3"+periods[i],"COST","COST","COST","COST","COST","COST","COST","COST","COST","COST","COST","COST","COST","ITOLL3"+periods[i]}
    end
    
-   num_class=14
-   
-   class_PCE={1,1,1,1,1,1,1,1,1.3,1.5,2.5,1.3,1.5,2.5}
-   VOT={67,67,67,67,67,67,67,67,67,68,89,67,68,89}
+   class_PCE={1,1,1,1,1,1,1,1,1.3,1.5,2.5,1.3,1.5,2.5,1,1.3,2.5,1,1.3,2.5,1,1}
+   VOT={50,50,50,50,50,50,50,50,50,51,72,50,51,72,50,51,72,50,51,72,50,50}
 
    //Prepare selection set for turning movement report, by JXu
    if (GetFileInfo(inputDir+turn_file)!=null & iteration=4) then do
