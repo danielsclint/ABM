@@ -10,7 +10,7 @@ input files: hwy.dbd
    Trip_PM.mtx: PM Peak  auto trip matrix file 
    Trip_EV.mtx: Evening  auto trip matrix file 
 
-each file has 17 cores:
+each file has 22 cores:
 
  Name     Description
  -------  ---------------------------------------
@@ -238,7 +238,8 @@ Macro "hwy assignment" (args)
    end
    
    class_PCE={1,1,1,1,1,1,1,1,1.3,1.5,2.5,1.3,1.5,2.5,1,1.3,2.5,1,1.3,2.5,1,1}
-   VOT={50,50,50,50,50,50,50,50,50,51,72,50,51,72,50,51,72,50,51,72,50,50}
+//   VOT={50,50,50,50,50,50,50,50,50,51,72,50,51,72,50,51,72,50,51,72,50,50}
+   VOT={67,67,67,67,67,67,67,67,67,68,89,67,68,89,67,68,89,67,68,89,67,67}
 
    //Prepare selection set for turning movement report, by JXu
    if (GetFileInfo(inputDir+turn_file)!=null & iteration=4) then do

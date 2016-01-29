@@ -39,6 +39,12 @@ Macro "Hwy skim all"
    ok=RunMacro("hwy skim",{"s3th"}) 
    if !ok then goto quit
 
+   ok=RunMacro("hwy skim",{"hhdn"}) 
+   if !ok then goto quit
+
+   ok=RunMacro("hwy skim",{"hhdt"}) 
+   if !ok then goto quit
+
    ok=RunMacro("hwy skim",{"truck"}) 
    if !ok then goto quit
 
@@ -105,6 +111,9 @@ Macro "Update highway network"
    da_vot=67.00 // $0.67 cents per minute VOT ($40.2 per hour)
    s2_vot=67.00
    s3_vot=67.00
+   lhd_VOT=50.00
+   mhd_VOT=51.00
+   hhd_VOT=72.00
  
    da_vot=da_vot*60/100   //Convert to dollars per hour VOT so don't have to change gen cost function below
    s2_vot=s2_vot*60/100
@@ -235,12 +244,12 @@ Skim highway network for the following modes (passed as argument)
 Mode     Description                  Cost attribute
 ----     ---------------------        --------------
 truck    Truck                        SCST
-lhdn     Light-heavy-duty non-toll    SCST
-mhdn     Medium-heavy-duty non-toll   SCST
-hhdn     Heavy-heavy-duty non-toll    SCST
-lhdt     Light-heavy-duty toll        SCST
-mhdt     Medium-heavy-duty toll       SCST
-hhdt     Heavy-heavy-duty toll        SCST
+lhdn     Light-heavy-duty non-toll    LHDCST
+mhdn     Medium-heavy-duty non-toll   MHDCST
+hhdn     Heavy-heavy-duty non-toll    HHDCST
+lhdt     Light-heavy-duty toll        LHDCST
+mhdt     Medium-heavy-duty toll       MHDCST
+hhdt     Heavy-heavy-duty toll        HHDCST
 dant     Drive-alone non-toll         SCST
 dat      Drive-alone toll             SCST
 s2nh     Shared-2 non-toll HOV        H2CST
@@ -280,7 +289,8 @@ Macro "hwy skim" (arr)
 
          CostFld =  "*SCST"+periods[i]                               // minimizing cost field
          SkimVar1 = "*STM" +periods[i]                               // first skim varaible (in addition to LENGTH)
-
+         SkimVar2 = null
+         SkimVar3 = null
          skimbyset1 = null                                           // second skim varaible (in addition to LENGTH)
          skimbyset2 = null                                           // third skim variable
          
@@ -290,16 +300,56 @@ Macro "hwy skim" (arr)
          vw_set = link_lyr + "|" + set
          SetLayer(link_lyr)
          n = SelectByQuery(set, "Several", "Select * where (ihov=4 and (ITRUCK=1|ITRUCK>4))",)
-         if n > 0 then skimbyset1={vw_set, {"itoll"+periods[i]}}
+         if n > 0 then skimbyset1={vw_set, {"itoll"+periods[i],"itoll2"+periods[i]}}
          
          skimmat = "imptrk"+periods[i]+".mtx"                        // output skim matrices
 
       end
+
+      else if mode = "ldn" then do
+
+         CostFld =  "*LDCST"+periods[i]                             // minimizing cost field
+         SkimVar1 = "*STM"+periods[i]                              // first skim varaible (in addition to LENGTH)
+         SkimVar2 = null
+         SkimVar3 = null
+         skimbyset1 = null
+         skimbyset2 = null
+   
+         excl_qry = "!(ihov=1&ITRUCK<5)"                           // query for exclusion link set
+   
+         skimmat =  "impldn"+periods[i]+".mtx"                     // output skim matrices
+      end
+      else if mode = "ldt" then do
+         
+         CostFld = "*LDCST"+periods[i]                                // minimizing cost field
+         SkimVar1 = "*STM"+periods[i]                                // first skim varaible (in addition to LENGTH)
+         SkimVar2 = "ITOLL2"+periods[i]
+         SkimVar3 = null
+         skimbyset1 = null
+         skimbyset2 = null
+
+         excl_qry = "!(((ihov=1|ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))|ifc>7)&ITRUCK<5)"
+         set =  mode
+         vw_set = link_lyr + "|" + set
+         SetLayer(link_lyr)
+         n = SelectByQuery(set, "Several","Select * where !(((ihov=1|ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))|ifc>7)&ITRUCK<5)",)
+         if n = 0 then excl_qry=null   //reset value if no selection records
+   
+         // skimbyset1 = length on toll lanes
+         set = "ldtdst"+periods[i]
+         vw_set = link_lyr + "|" + set
+         SetLayer(link_lyr)
+         n = SelectByQuery(set, "Several", "Select * where ((ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))&ITRUCK<5)",)
+         if n > 0 then skimbyset1={vw_set, {"Length"}}
       
+         skimmat = "impldt"+periods[i]+".mtx"
+      end
       else if mode = "lhdn" then do                                  // light duty truck non-toll 
                                                                                     
-         CostFld =  "*SCST"+periods[i]                               // minimizing cost field 
+         CostFld =  "*LHDCST"+periods[i]                               // minimizing cost field 
          SkimVar1 = "*STM" +periods[i]                               // first skim varaible (in addition to LENGTH)
+         SkimVar2 = null
+         SkimVar3 = null
          skimbyset1 = null                                                           
          skimbyset2 = null                                                           
          
@@ -309,8 +359,10 @@ Macro "hwy skim" (arr)
       end    
       else if mode = "mhdn" then do                                  // medium duty truck non-toll 
                                                                                     
-         CostFld =  "*SCST"+periods[i]                               // minimizing cost field 
+         CostFld =  "*MHDCST"+periods[i]                               // minimizing cost field 
          SkimVar1 = "*STM" +periods[i]                               // first skim varaible (in addition to LENGTH)
+         SkimVar2 = null
+         SkimVar3 = null
          skimbyset1 = null                                                           
          skimbyset2 = null                                                           
          
@@ -320,8 +372,10 @@ Macro "hwy skim" (arr)
       end   
       else if mode = "hhdn" then do                                  // heavy duty truck non-toll 
                                                                                     
-         CostFld =  "*SCST"+periods[i]                               // minimizing cost field 
+         CostFld =  "*HHDCST"+periods[i]                               // minimizing cost field 
          SkimVar1 = "*STM" +periods[i]                               // first skim varaible (in addition to LENGTH)
+         SkimVar2 = null
+         SkimVar3 = null
          skimbyset1 = null                                                           
          skimbyset2 = null                                                           
          
@@ -329,90 +383,92 @@ Macro "hwy skim" (arr)
          
          skimmat = "imp"+mode+periods[i]+".mtx"                      // output skim matrices        
       end 
-      
-      else if mode = "lhdt" then do   
-         CostFld =  "*SCST"+periods[i]                                                  // minimizing cost field 
-         SkimVar1 = "*STM" +periods[i]                                                  // first skim varaible (in addition to LENGTH)
-                                                                                        
-         skimbyset1 = null                                                              // second skim varaible
-         skimbyset2 = null                                                              // third skim variable
-                   
+      else if mode = "lhdt" then do                                  // light duty truck toll
+                                                                                  
+         CostFld =  "*LHDCST"+periods[i]                               // minimizing cost field 
+         SkimVar1 = "*STM" +periods[i]                               // first skim varaible (in addition to LENGTH)
+         SkimVar2 = "ITOLL2" + periods[i] 
+         SkimVar3 = null                                                                                       
+         skimbyset1 = null                                           // second skim varaible
+         skimbyset2 = null                                           // third skim variable
+                  
          excl_qry = "!(((ihov=1|ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))|ifc>7) & (ITRUCK<4|ITRUCK=7))" // query for lhd toll exclusion link set
-
-         tollfield = "ITOLL2"                                                                                   // toll value
-          
+        
          set =  mode
          vw_set = link_lyr + "|" + set
          SetLayer(link_lyr)
-         n = SelectByQuery(set, "Several", "Select * where " + excl_qry,)
+         n = SelectByQuery(set, "Several", "Select * where !(((ihov=1|ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))|ifc>7)&(ITRUCK<4|ITRUCK=7))",)
          if n = 0 then excl_qry=null                                                    // reset value if no selection records 
-         
-         // skimbyset1 = toll
-         set = mode
+
+         // skimbyset1 = length on toll lanes
+         set = "tolldst"+periods[i]
          vw_set = link_lyr + "|" + set
          SetLayer(link_lyr)
-         n = SelectByQuery(set, "Several", "Select * where 1=1",)                       // for all links     
-         if n > 0 then skimbyset1={vw_set, {tollfield + periods[i] }}
+         n = SelectByQuery(set, "Several", "Select * where ((ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))&(ITRUCK<4|ITRUCK=7))",)   // for all links
+         if n > 0 then skimbyset1={vw_set, {"Length"}}
   
          skimmat = "imp"+mode+periods[i]+".mtx"                    // output skim matrices        
-      end
-      else if mode = "mhdt" then do   
-         CostFld =  "*SCST"+periods[i]                                                  // minimizing cost field 
-         SkimVar1 = "*STM" +periods[i]                                                  // first skim varaible (in addition to LENGTH)
-                                                                                        
-         skimbyset1 = null                                                              // second skim varaible
-         skimbyset2 = null                                                              // third skim variable
-                   
+      end  
+      else if mode = "mhdt" then do                                  // medium duty truck toll
+                                                                                  
+         CostFld =  "*MHDCST"+periods[i]                               // minimizing cost field 
+         SkimVar1 = "*STM" +periods[i]                               // first skim varaible (in addition to LENGTH)
+         SkimVar2 = "ITOLL2" + periods[i] 
+         SkimVar3 = null                                                                                       
+         skimbyset1 = null                                           // second skim varaible
+         skimbyset2 = null                                           // third skim variable
+                
          excl_qry = "!(((ihov=1|ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))|ifc>7)&(ITRUCK<3|ITRUCK>5))" // query for mhd toll exclusion link set
-
-         tollfield = "ITOLL2"                                                                                   // toll value
           
          set =  mode
          vw_set = link_lyr + "|" + set
          SetLayer(link_lyr)
-         n = SelectByQuery(set, "Several", "Select * where " + excl_qry,)
+         n = SelectByQuery(set, "Several", "Select * where !(((ihov=1|ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))|ifc>7)&(ITRUCK<3|ITRUCK>5))",)
          if n = 0 then excl_qry=null                                                    // reset value if no selection records 
          
-         // skimbyset1 = toll
-         set = mode
+         // skimbyset1 = length on toll lanes
+         set = "tolldst"+periods[i]
          vw_set = link_lyr + "|" + set
          SetLayer(link_lyr)
-         n = SelectByQuery(set, "Several", "Select * where 1=1",)                       // for all links     
-         if n > 0 then skimbyset1={vw_set, {tollfield + periods[i] }}
+         n = SelectByQuery(set, "Several", "Select * where ((ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))&(ITRUCK<3|ITRUCK>5))",)   // for all links
+         if n > 0 then skimbyset1={vw_set, {"Length"}}
   
          skimmat = "imp"+mode+periods[i]+".mtx"                    // output skim matrices        
-      end
-      else if mode = "hhdt" then do   
-         CostFld =  "*SCST"+periods[i]                                                  // minimizing cost field 
-         SkimVar1 = "*STM" +periods[i]                                                  // first skim varaible (in addition to LENGTH)
-                                                                                        
-         skimbyset1 = null                                                              // second skim varaible
-         skimbyset2 = null                                                              // third skim variable
-                   
+      end  
+
+      else if mode = "hhdt" then do                                  // heavy duty truck toll
+                                                                                  
+         CostFld =  "*HHDCST"+periods[i]                               // minimizing cost field 
+         SkimVar1 = "*STM" +periods[i]                               // first skim varaible (in addition to LENGTH)
+         SkimVar2 = "ITOLL2" + periods[i]
+         SkimVar3 = null                                                                     
+         skimbyset1 = null                                           // second skim varaible
+         skimbyset2 = null                                           // third skim variable
+   
          excl_qry = "!(((ihov=1|ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))|ifc>7)&(ITRUCK=1|ITRUCK>4))" // query for hhd toll exclusion link set
-
-         tollfield = "ITOLL2"                                                                                   // toll value
           
          set =  mode
          vw_set = link_lyr + "|" + set
          SetLayer(link_lyr)
-         n = SelectByQuery(set, "Several", "Select * where " + excl_qry,)
+         n = SelectByQuery(set, "Several", "Select * where !(((ihov=1|ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))|ifc>7)&(ITRUCK=1|ITRUCK>4))",)
          if n = 0 then excl_qry=null                                                    // reset value if no selection records 
-         
-         // skimbyset1 = toll
-         set = mode
+
+         // skimbyset1 = length on toll lanes
+         set = "tolldst"+periods[i]
          vw_set = link_lyr + "|" + set
          SetLayer(link_lyr)
-         n = SelectByQuery(set, "Several", "Select * where 1=1",)                       // for all links     
-         if n > 0 then skimbyset1={vw_set, {tollfield + periods[i] }}
-  
+         n = SelectByQuery(set, "Several", "Select * where ((ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))&(ITRUCK=1|ITRUCK>4))",)   // for all links
+         if n > 0 then skimbyset1={vw_set, {"Length"}}
+
          skimmat = "imp"+mode+periods[i]+".mtx"                    // output skim matrices        
-      end
+      end  
                                                                            
       else if mode = "dant" then do
 
          CostFld =  "*SCST"+periods[i]                             // minimizing cost field
          SkimVar1 = "*STM"+periods[i]                              // first skim varaible (in addition to LENGTH)
+         SkimVar2 = null
+         SkimVar3 = null
          skimbyset1 = null
          skimbyset2 = null
    
@@ -424,6 +480,8 @@ Macro "hwy skim" (arr)
          
          CostFld = "*SCST"+periods[i]                                // minimizing cost field
          SkimVar1 = "*STM"+periods[i]                                // first skim varaible (in addition to LENGTH)
+         SkimVar2 = "ITOLL"+periods[i]
+         SkimVar3 = "ITOLL2"+periods[i]
          skimbyset1 = null
          skimbyset2 = null
 
@@ -441,19 +499,14 @@ Macro "hwy skim" (arr)
          n = SelectByQuery(set, "Several", "Select * where ((ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))&ITRUCK<5)",)
          if n > 0 then skimbyset1={vw_set, {"Length"}}
    
-         // skimbyset2 = cost
-         set = mode + periods[i]
-         vw_set = link_lyr + "|" + set
-         SetLayer(link_lyr)
-         n = SelectByQuery(set, "Several", "Select * where 1=1",)   // for all links
-         if n > 0 then skimbyset2={vw_set, {"itoll"+periods[i]}}
-      
          skimmat = "impdat"+periods[i]+".mtx"
       end
       else if mode = "s2nh" then do
       
          CostFld =  "*H2CST"+periods[i]            // minimizing cost field
          SkimVar1 = "*HTM"+periods[i]
+         SkimVar2 = null
+         SkimVar3 = null
          skimbyset1 = null
          skimbyset2 = null
          
@@ -476,6 +529,8 @@ Macro "hwy skim" (arr)
          
          CostFld = "*H2CST"+periods[i]            // minimizing cost field
          SkimVar1 ="*HTM"+periods[i]
+         SkimVar2 = null
+         SkimVar3 = null
          skimbyset1 = null
          skimbyset2 = null
 
@@ -505,6 +560,8 @@ Macro "hwy skim" (arr)
       
          CostFld =  "*H3CST"+periods[i]            // minimizing cost field
          SkimVar1 = "*HTM" +periods[i]
+         SkimVar2 = null
+         SkimVar3 = null
          skimbyset1 = null
          skimbyset2 = null
 
@@ -528,6 +585,8 @@ Macro "hwy skim" (arr)
  
          CostFld = "*H3CST" + periods[i]                         // minimizing cost field
          SkimVar1 = "*HTM" + periods[i]
+         SkimVar2 = null
+         SkimVar3 = null
          skimbyset1 = null
          skimbyset2 = null
       
@@ -586,9 +645,16 @@ Macro "hwy skim" (arr)
       Opts.Input.[Via Set]     = {db_node_lyr, node_lyr}
       Opts.Field.Minimize     = CostFld
       Opts.Field.Nodes = node_lyr + ".ID"
-      Opts.Field.[Skim Fields]={{"Length","All"},{SkimVar1,"All"}}
-
-      if skimbyset1 <> null then do
+      if SkimVar2=null and SkimVar3=null then do
+        Opts.Field.[Skim Fields]={{"Length","All"},{SkimVar1,"All"}}
+      end
+      else if SkimVar3=null then do
+        Opts.Field.[Skim Fields]={{"Length","All"},{SkimVar1,"All"},{SkimVar2,"All"}}
+      end
+      else do
+        Opts.Field.[Skim Fields]={{"Length","All"},{SkimVar1,"All"},{SkimVar2,"All"},{SkimVar3,"All"}}      
+      end
+      if skimbyset1 <> null then  
          if skimbyset2 <> null then
             Opts.Field.[Skim by Set]={skimbyset1,skimbyset2}
          else
@@ -624,8 +690,73 @@ Macro "hwy skim" (arr)
          RunMacro("HwycadLog",{"hwyskim.rsc: hwy skim","Intrazonal: "+skimmat+"; "+mtxcore[j]})
          ok = RunMacro("TCB Run Procedure", j, "Intrazonal", Opts)
          if !ok then goto quit
+      end
+      
+      // Set toll intrazonal to 0
+      mtxcoresub={"ITOLL2" + periods[i]}
+      m=OpenMatrix(outputDir + "\\"+skimmat,)
+      mtxcore=GetMatrixCoreNames(m)
+      mtxcore_indices = GetMatrixIndexNames(m)
+      for j = 1 to mtxcoresub.length do
+        for k = 1 to mtxcore.length do
+          pos = Position(mtxcore[k], mtxcoresub[j])
+          if pos > 0 then do
+            mciToll=CreateMatrixCurrency(m, mtxcore[k], mtxcore_indices[1][1], mtxcore_indices[2][1], )
+            x=1
+            while x <= mxzone do
+              strX = String(x)
+              SetMatrixValue (mciToll, strX, strX, 0)
+              x=x+1
+            end
+          end
+        end
+      end
+
+
+
+
+      //Create CVM Disutility Skims
+      if mode = "ldn" then do
+        //Light Duty Non-Toll
+        ok=RunMacro("DU Skim","ldn",skimmat,periods[i]) 
+        if !ok then goto quit   
+      end 
+      else if mode = "lhdn" then do
+        //Truck Medium Non-Toll
+        ok=RunMacro("DU Skim","lhdn",skimmat,periods[i]) 
+        if !ok then goto quit
+      end
+      else if mode = "mhdn" then do
+        //Truck Medium Non-Toll
+        ok=RunMacro("DU Skim","mhdn",skimmat,periods[i]) 
+        if !ok then goto quit 
+      end
+      else if mode = "hhdn" then do
+        //Truck Heavy Non-Toll
+        ok=RunMacro("DU Skim","hhdn",skimmat,periods[i]) 
+        if !ok then goto quit 
+      end
+      if mode = "ldt" then do
+        //Light Duty Toll
+        ok=RunMacro("DU Skim","ldt",skimmat,periods[i]) 
+        if !ok then goto quit   
+      end 
+      else if mode = "lhdt" then do
+        //Truck Medium Toll
+        ok=RunMacro("DU Skim","lhdt",skimmat,periods[i]) 
+        if !ok then goto quit
+      end
+      else if mode = "mhdt" then do
+        //Truck Medium Toll
+        ok=RunMacro("DU Skim","mhdt",skimmat,periods[i]) 
+        if !ok then goto quit 
+      end
+      else if mode = "hhdt" then do
+        //Truck Heavy Toll
+        ok=RunMacro("DU Skim","hhdt",skimmat,periods[i]) 
+        if !ok then goto quit 
       end   
-   end
+    end
  
    ok=1
    runmacro("close all")
@@ -636,4 +767,71 @@ Macro "hwy skim" (arr)
 EndMacro
 
 
+Macro "DU Skim" (mode,skimmat,period) //Disutility Skim
+    shared outputDir
+
+    //Cores to add together (time,length,toll)
+    toll_core={4,2,3}
+    nontoll_core={3,2}
+    corenameDU="DU"+period
+
+    //Disutility Coefficients for Light Vehicle, Medium Vehicle, Heavy Vehicles
+    DUCoef={{-0.313,-0.138,-0.01},{-0.313,-0.492,-0.01},{-0.302,-0.580,-0.02}} //Toll coefficients are scaled to convert to cents, heavy truck tolls are *2 for SR125 toll difference for trucks
+  
+    //Create Medium and Heavy from Truck skim, Setup names for later
+    if mode = "ldn" then do
+      util=1
+      core=nontoll_core
+    end
+    if mode = "ldt" then do
+      util=1
+      core=toll_core
+    end
+    if mode = "lhdn" then do
+      util=2
+      core=nontoll_core
+    end
+    if mode = "lhdt" then do
+      util=2
+      core=toll_core
+    end
+    if mode = "mhdn" then do
+      util=2
+      core=nontoll_core
+    end
+    if mode = "mhdt" then do
+      util=2
+      core=toll_core
+    end
+    if mode = "hhdn" then do
+      util=3
+      core=nontoll_core
+    end
+    if mode = "hhdt" then do
+      util=3
+      core=toll_core
+    end
+
+    //open matrix, add disultility core, get corenames, get matrix id's, and create matrix currencies
+    m = OpenMatrix(outputDir + "\\"+skimmat, )
+    AddMatrixCore(m, corenameDU)
+    corename = GetMatrixCoreNames(m)
+    curr_idx = GetMatrixIndex(m)
+    mcTime = CreateMatrixCurrency(m, corename[core[1]], curr_idx[1], curr_idx[2], )
+    mcLength = CreateMatrixCurrency(m, corename[core[2]], curr_idx[1], curr_idx[2], )
+    if core.length = 3 then do //toll matrix
+      mcToll = CreateMatrixCurrency(m, corename[core[3]], curr_idx[1], curr_idx[2], )
+    end
+    mcDU = CreateMatrixCurrency(m, corenameDU, curr_idx[1], curr_idx[2], )
+
+    //calc disutility
+    if core.length = 3 then do //toll matrix
+      mcDU := DUCoef[util][1]*mcTime + DUCoef[util][2]*mcLength + DUCoef[util][3]*mcToll
+    end
+    else do
+      mcDU := DUCoef[util][1]*mcTime + DUCoef[util][2]*mcLength     
+    end
+    return(1)
+
+EndMacro
 
