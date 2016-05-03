@@ -40,34 +40,34 @@ Macro "truck model"(properties, iteration)
     end
 
     // Build lhdn congested skims
-    RunMacro("HwycadLog",{"TruckModel.rsc: truckmodel","hwy skim,(lhdn)"})
-    ok = RunMacro("hwy skim",{"lhdn"})
-    if !ok then goto quit
+//    RunMacro("HwycadLog",{"TruckModel.rsc: truckmodel","hwy skim,(lhdn)"})
+//    ok = RunMacro("hwy skim",{"lhdn"})
+//    if !ok then goto quit
       
     // Build mhdn congested skims
-    RunMacro("HwycadLog",{"TruckModel.rsc: truckmodel","hwy skim,(mhdn)"})
-    ok = RunMacro("hwy skim",{"mhdn"}) 
-    if !ok then goto quit
+//    RunMacro("HwycadLog",{"TruckModel.rsc: truckmodel","hwy skim,(mhdn)"})
+//    ok = RunMacro("hwy skim",{"mhdn"}) 
+//    if !ok then goto quit
       
     // Build hhdn congested skims
-    RunMacro("HwycadLog",{"TruckModel.rsc: truckmodel","hwy skim,(hhdn)"})  
-    ok = RunMacro("hwy skim",{"hhdn"}) 
-    if !ok then goto quit
+//    RunMacro("HwycadLog",{"TruckModel.rsc: truckmodel","hwy skim,(hhdn)"})  
+//    ok = RunMacro("hwy skim",{"hhdn"}) 
+//    if !ok then goto quit
       
     // Build lhdt congested skims 
-    RunMacro("HwycadLog",{"TruckModel.rsc: truckmodel","hwy skim,(lhdt)"})  
-    ok = RunMacro("hwy skim",{"lhdt"}) 
-    if !ok then goto quit
+//    RunMacro("HwycadLog",{"TruckModel.rsc: truckmodel","hwy skim,(lhdt)"})  
+//    ok = RunMacro("hwy skim",{"lhdt"}) 
+//    if !ok then goto quit
       
     // Build mhdt congested skims
-    RunMacro("HwycadLog",{"TruckModel.rsc: truckmodel","hwy skim,(mhdt)"})  
-    ok = RunMacro("hwy skim",{"mhdt"}) 
-    if !ok then goto quit      
+//    RunMacro("HwycadLog",{"TruckModel.rsc: truckmodel","hwy skim,(mhdt)"})  
+//    ok = RunMacro("hwy skim",{"mhdt"}) 
+//    if !ok then goto quit      
       
     // Build hhdt congested skims 
-    RunMacro("HwycadLog",{"TruckModel.rsc: truckmodel","hwy skim,(hhdt)"})     
-    ok = RunMacro("hwy skim",{"hhdt"}) 
-    if !ok then goto quit
+//    RunMacro("HwycadLog",{"TruckModel.rsc: truckmodel","hwy skim,(hhdt)"})     
+//    ok = RunMacro("hwy skim",{"hhdt"}) 
+//    if !ok then goto quit
   
     // Distribute daily truck trips and split them by time period
     RunMacro("HwycadLog",{"TruckModel.rsc: truckmodel","trkDistribution,(properties)"})      
@@ -1410,9 +1410,9 @@ Macro "trk toll diversion model"
           
           // Diversion curve (time is in minutes, cost is in cents)
           utility = "(([impedance truck].[*STM_"+periodName[period]+" (Skim)] - [impedance truck toll].[*STM_"+periodName[period]+" (Skim)]) - " + 
-                      String(vot) + " * " + "[impedance truck toll].["+trkTypes[trkType]+"t - "+"ITOLL2_"+periodName[period]+"] * " + String(trkTollFactor[trkType]) + " ) / " + String(nest_param)
+                      String(vot) + " * " + "[impedance truck toll].[ITOLL2_"+periodName[period]+" (Skim)] * " + String(trkTollFactor[trkType]) + " ) / " + String(nest_param)
           
-          expression = "if([impedance truck toll].["+trkTypes[trkType]+"t - "+"ITOLL2_"+periodName[period]+"]!=0) then ( 1 / ( 1 + exp(-" + utility + ") ) ) else [impedance truck toll].["+trkTypes[trkType]+"t - "+"ITOLL2_"+periodName[period]+"]"
+          expression = "if([impedance truck toll].[ITOLL2_"+periodName[period]+" (Skim)]!=0) then ( 1 / ( 1 + exp(-" + utility + ") ) ) else [impedance truck toll].[ITOLL2_"+periodName[period]+" (Skim)]"
           
           // Calculate toll matrix
           Opts = null
