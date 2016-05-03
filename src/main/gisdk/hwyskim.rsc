@@ -39,14 +39,32 @@ Macro "Hwy skim all"
    ok=RunMacro("hwy skim",{"s3th"}) 
    if !ok then goto quit
 
+   ok=RunMacro("hwy skim",{"ldn"}) 
+   if !ok then goto quit
+
+   ok=RunMacro("hwy skim",{"ldt"}) 
+   if !ok then goto quit
+
+   ok=RunMacro("hwy skim",{"lhdn"}) 
+   if !ok then goto quit
+
+   ok=RunMacro("hwy skim",{"lhdt"}) 
+   if !ok then goto quit
+
+   ok=RunMacro("hwy skim",{"mhdn"}) 
+   if !ok then goto quit
+
+   ok=RunMacro("hwy skim",{"mhdt"}) 
+   if !ok then goto quit
+
    ok=RunMacro("hwy skim",{"hhdn"}) 
    if !ok then goto quit
 
    ok=RunMacro("hwy skim",{"hhdt"}) 
    if !ok then goto quit
 
-   ok=RunMacro("hwy skim",{"truck"}) 
-   if !ok then goto quit
+//   ok=RunMacro("hwy skim",{"truck"}) 
+//   if !ok then goto quit
 
 
    return(1)
@@ -317,7 +335,7 @@ Macro "hwy skim" (arr)
    
          excl_qry = "!(ihov=1&ITRUCK<5)"                           // query for exclusion link set
    
-         skimmat =  "impldn"+periods[i]+".mtx"                     // output skim matrices
+         skimmat =  "imp"+mode+periods[i]+".mtx"                     // output skim matrices
       end
       else if mode = "ldt" then do
          
@@ -342,7 +360,7 @@ Macro "hwy skim" (arr)
          n = SelectByQuery(set, "Several", "Select * where ((ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))&ITRUCK<5)",)
          if n > 0 then skimbyset1={vw_set, {"Length"}}
       
-         skimmat = "impldt"+periods[i]+".mtx"
+         skimmat = "imp"+mode+periods[i]+".mtx"
       end
       else if mode = "lhdn" then do                                  // light duty truck non-toll 
                                                                                     
@@ -480,8 +498,8 @@ Macro "hwy skim" (arr)
          
          CostFld = "*SCST"+periods[i]                                // minimizing cost field
          SkimVar1 = "*STM"+periods[i]                                // first skim varaible (in addition to LENGTH)
-         SkimVar2 = "ITOLL"+periods[i]
-         SkimVar3 = "ITOLL2"+periods[i]
+         SkimVar2 = "ITOLL2"+periods[i]
+         SkimVar3 = null
          skimbyset1 = null
          skimbyset2 = null
 
@@ -499,6 +517,13 @@ Macro "hwy skim" (arr)
          n = SelectByQuery(set, "Several", "Select * where ((ihov=4|((ihov=2|ihov=3)&(itoll"+periods[i]+">0&abln"+periods[i]+"<9)))&ITRUCK<5)",)
          if n > 0 then skimbyset1={vw_set, {"Length"}}
    
+         // skimbyset2 = cost
+         set = mode + periods[i]
+         vw_set = link_lyr + "|" + set
+         SetLayer(link_lyr)
+         n = SelectByQuery(set, "Several", "Select * where 1=1",)   // for all links
+         if n > 0 then skimbyset2={vw_set, {"itoll"+periods[i]}}
+
          skimmat = "impdat"+periods[i]+".mtx"
       end
       else if mode = "s2nh" then do
@@ -654,22 +679,28 @@ Macro "hwy skim" (arr)
       else do
         Opts.Field.[Skim Fields]={{"Length","All"},{SkimVar1,"All"},{SkimVar2,"All"},{SkimVar3,"All"}}      
       end
-      if skimbyset1 <> null then  
-         if skimbyset2 <> null then
+      if skimbyset1 <> null then do  
+         if skimbyset2 <> null then do
             Opts.Field.[Skim by Set]={skimbyset1,skimbyset2}
-         else
+         end
+         else do
             Opts.Field.[Skim by Set]={skimbyset1}
+         end
       end
       else if skimbyset2 <> null then 
         Opts.Field.[Skim by Set]={skimbyset2}
         //end of previous if string
-      if (mode = "lhdn" | mode = "mhdn" | mode = "hhdn" | mode = "lhdt" | mode = "mhdt" | mode = "hhdt") then 
-        if (mode = "lhdn" | mode = "mhdn" | mode = "hhdn") then
+      if (mode = "lhdn" | mode = "mhdn" | mode = "hhdn" | mode = "lhdt" | mode = "mhdt" | mode = "hhdt") then do
+        if (mode = "lhdn" | mode = "mhdn" | mode = "hhdn") then do
          Opts.Output.[Output Matrix].Label = "impedance truck"                                 
-        else if (mode = "lhdt" | mode = "mhdt" | mode = "hhdt") then
+        end
+        else if (mode = "lhdt" | mode = "mhdt" | mode = "hhdt") then do
           Opts.Output.[Output Matrix].Label = "impedance truck toll"  
-        else 
-         Opts.Output.[Output Matrix].Label = "congested " + mode + " impedance"  
+        end
+        else do 
+         Opts.Output.[Output Matrix].Label = "congested " + mode + " impedance" 
+        end 
+      end
       Opts.Output.[Output Matrix].Compression = 0 //uncompressed, for version 4.8 plus    
       Opts.Output.[Output Matrix].[File Name] = outputDir + "\\"+skimmat
       

@@ -41,6 +41,7 @@ Macro "Run SANDAG ABM"
    skipTransitSkimming = RunMacro("read properties array",properties,"RunModel.skipTransitSkimming", "S")
    skipCoreABM = RunMacro("read properties array",properties,"RunModel.skipCoreABM", "S")
    skipOtherSimulateModel = RunMacro("read properties array",properties,"RunModel.skipOtherSimulateModel", "S")
+   skipCTMSkimExport = RunMacro("read properties array",properties,"RunModel.skipCTMSkimExport", "S")
    skipCTM = RunMacro("read properties array",properties,"RunModel.skipCTM", "S")
    skipEI = RunMacro("read properties array",properties,"RunModel.skipEI", "S")
    skipTruck = RunMacro("read properties array",properties,"RunModel.skipTruck", "S")
@@ -192,31 +193,24 @@ Macro "Run SANDAG ABM"
 	      if !ok then goto quit  
       end
 
- 
+      if skipCTMSkimExport[iteration] = "false" then do 
+       //export CTM skims
+    	 RunMacro("HwycadLog",{"sandag_abm_master.rsc","Export CVM Skims"})
+    	 ok = RunMacro("Export_ABM_Skims")
+       if !ok then goto quit
+      end
+
       if skipCTM[iteration] = "false" then do
-	     //Commercial vehicle trip generation
-	      RunMacro("HwycadLog",{"sandag_abm_master.rsc:","Macro - run commercial vehicle generation"})
-	      ok = RunMacro("TCB Run Macro", 1, "Commercial Vehicle Generation",{}) 
-	      if !ok then goto quit
-	
-	      //Commercial vehicle trip distribution
-	      RunMacro("HwycadLog",{"sandag_abm_master.rsc:","Macro - run commercial vehicle distribution"})
-	      ok = RunMacro("TCB Run Macro", 1, "Commercial Vehicle Distribution",{}) 
-	      if !ok then goto quit
-	
-	      //Commercial vehicle time-of-day
-	      RunMacro("HwycadLog",{"sandag_abm_master.rsc:","Macro - run commercial vehicle Time Of Day"})
-	      ok = RunMacro("TCB Run Macro", 1, "Commercial Vehicle Time Of Day",{}) 
-	      if !ok then goto quit
-	
-	      //Commercial vehicle toll diversion model
-	      RunMacro("HwycadLog",{"sandag_abm_master.rsc:","Macro - run commercial vehicle Toll Diversion"})
-	      ok = RunMacro("TCB Run Macro", 1, "cv toll diversion model",{}) 
-	      if !ok then goto quit
+       //run CTM
+       cvm_ScaleFactor = RunMacro("read properties array",properties,"cvm.scaleFactor", "S")
+       runString = path+"\\bin\\cvm.bat "+drive+" "+path_no_drive+" "+path_forward_slash+" "+cvm_ScaleFactor[iteration]
+       RunMacro("HwycadLog",{"sandag_abm_master.rsc:","Running CTM: "+" "+runString})
+       ok = RunMacro("TCB Run Command", 1, "Run CTM", runString)
+       if !ok then goto quit
 
     	      // reduce commerical travel matrix precisions    
-    	      RunMacro("HwycadLog",{"sandag_abm_master.rsc","reduce matrix precision for commVehTODTrips.mtx"})
-    	      RunMacro("reduce matrix precision",outputDir,"commVehTODTrips.mtx", precision)
+//    	      RunMacro("HwycadLog",{"sandag_abm_master.rsc","reduce matrix precision for commVehTODTrips.mtx"})
+//    	      RunMacro("reduce matrix precision",outputDir,"commVehTODTrips.mtx", precision)
       end
 
       //Run External(U.S.)-Internal Model
@@ -235,18 +229,18 @@ Macro "Run SANDAG ABM"
       end
 
       //Run Truck Model
-      if skipTruck[iteration] = "false" then do
-	      RunMacro("HwycadLog",{"sandag_abm_master.rsc:","Macro - truck model"})
-	      ok = RunMacro("truck model",properties, iteration)
-	      if !ok then goto quit
+//      if skipTruck[iteration] = "false" then do
+//	      RunMacro("HwycadLog",{"sandag_abm_master.rsc:","Macro - truck model"})
+//	      ok = RunMacro("truck model",properties, iteration)
+//	      if !ok then goto quit
  
     	     // reduce truck matrix precisions    
-    	     m={"dailyDistributionMatricesTruckEA.mtx","dailyDistributionMatricesTruckAM.mtx","dailyDistributionMatricesTruckMD.mtx","dailyDistributionMatricesTruckPM.mtx","dailyDistributionMatricesTruckEV.mtx"}
-    	     for i = 1 to m.length do
-    		RunMacro("HwycadLog",{"sandag_abm_master.rsc","reduce precision for:"+m[i]})
-    		RunMacro("reduce matrix precision",outputDir,m[i], precision)
-    	     end
-     end   
+//    	     m={"dailyDistributionMatricesTruckEA.mtx","dailyDistributionMatricesTruckAM.mtx","dailyDistributionMatricesTruckMD.mtx","dailyDistributionMatricesTruckPM.mtx","dailyDistributionMatricesTruckEV.mtx"}
+//    	     for i = 1 to m.length do
+//    		RunMacro("HwycadLog",{"sandag_abm_master.rsc","reduce precision for:"+m[i]})
+//    		RunMacro("reduce matrix precision",outputDir,m[i], precision)
+//    	     end
+//     end   
 
       //Construct trip tables
       if skipTripTableCreation[iteration] = "false" then do
@@ -259,7 +253,13 @@ Macro "Run SANDAG ABM"
     	      RunMacro("reduce matrix precision",outputDir,"externalExternalTrips.mtx", precision)
       end
 
-   end
+      //Combine CVM trip table and drop HDTM II tables
+      RunMacro("Combine CVM and ABM Matrices",properties,1)
+    
+      //Create external commercial LD tables
+      RunMacro("CVM Ext LD")
+
+   end //end iteration looping
 
   // Run final highway assignment
    if skipFinalHighwayAssignment = "false" then do

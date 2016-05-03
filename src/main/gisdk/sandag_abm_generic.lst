@@ -8,10 +8,6 @@ ${workpath}\\gisdk\\hwyskim.rsc
 ${workpath}\\gisdk\\createtrnroutes.rsc 
 ${workpath}\\gisdk\\trnskim.rsc 
 ${workpath}\\gisdk\\trnassign.rsc
-${workpath}\\gisdk\\commVehGen.rsc 
-${workpath}\\gisdk\\commVehDist.rsc 
-${workpath}\\gisdk\\commVehTOD.rsc
-${workpath}\\gisdk\\commVehDiversion.rsc  
 ${workpath}\\gisdk\\createtodtables.rsc 
 ${workpath}\\gisdk\\externalInternal.rsc   
 ${workpath}\\gisdk\\TruckModel.rsc 
@@ -20,3 +16,6 @@ ${workpath}\\gisdk\\sandag_abm_outputs.rsc
 ${workpath}\\gisdk\\exportTCData.rsc 
 ${workpath}\\gisdk\\Utilities.rsc
 ${workpath}\\gisdk\\matrixPrecisionReduction.rsc 
+${workpath}\\gisdk\\cvm_CombineTripMtx.rsc
+${workpath}\\gisdk\\cvm_ExportABMmtx.rsc
+${workpath}\\gisdk\\cvm_external_LD.rsc

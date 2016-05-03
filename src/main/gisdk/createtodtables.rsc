@@ -33,7 +33,7 @@ Macro "Create Auto Tables"
    truckFactors = {0.1, 1.0, 0.65, 1.0, 0.25}
    truckMatrices ={"lhdn","lhdt","mhdn","mhdt","hhdn","hhdt"}
  */  
- 
+ /* 
    truckTables = {
       outputDir+"\\dailyDistributionMatricesTruckEA.mtx",
       outputDir+"\\dailyDistributionMatricesTruckAM.mtx",
@@ -49,7 +49,7 @@ Macro "Create Auto Tables"
       truckMatrices[i] = OpenMatrix(truckTables[i], )                                                               
 	  truckCurrencies[i] = CreateMatrixCurrencies(truckMatrices[i], , , )
    end
-   
+ */   
     externalInternalTables = {
    	  outputDir+"\\usSdWrk",
    	  outputDir+"\\usSdNon"
@@ -246,13 +246,14 @@ Macro "Create Auto Tables"
       outCurrencies.mhdt := truckCurrencies[truckPeriod].mhdt * truckFactors[i]
       outCurrencies.hhdt := truckCurrencies[truckPeriod].hhdt * truckFactors[i]
       */
-
-	  outCurrencies.lhdn := truckCurrencies[i].lhdn
+     /*
+      outCurrencies.lhdn := truckCurrencies[i].lhdn
       outCurrencies.mhdn := truckCurrencies[i].mhdn
       outCurrencies.hhdn := truckCurrencies[i].hhdn
       outCurrencies.lhdt := truckCurrencies[i].lhdt
       outCurrencies.mhdt := truckCurrencies[i].mhdt
       outCurrencies.hhdt := truckCurrencies[i].hhdt 
+      */
    end
    RunMacro("close all" )
    quit:
