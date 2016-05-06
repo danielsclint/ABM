@@ -63,8 +63,8 @@ Macro "Hwy skim all"
    ok=RunMacro("hwy skim",{"hhdt"}) 
    if !ok then goto quit
 
-//   ok=RunMacro("hwy skim",{"truck"}) 
-//   if !ok then goto quit
+   ok=RunMacro("hwy skim",{"truck"}) 
+   if !ok then goto quit
 
 
    return(1)
