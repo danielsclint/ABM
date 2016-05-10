@@ -168,12 +168,14 @@ Macro "Run SANDAG ABM"
          status = RunProgram("cmd.exe /c copy "+fromDir+"\\nmot*.mtx "+toDir+"\\nmot*.mtx",)
          status = RunProgram("cmd.exe /c copy "+fromDir+"\\othr*.mtx "+toDir+"\\othr*.mtx",)
          status = RunProgram("cmd.exe /c copy "+fromDir+"\\trip*.mtx "+toDir+"\\trip*.mtx",)
+         status = RunProgram("cmd.exe /c copy "+fromDir+"\\CVM*.mtx "+toDir+"\\CVM*.mtx",)
  
          status = RunProgram("cmd.exe /c del "+fromDir+"\\auto*.mtx",)
          status = RunProgram("cmd.exe /c del "+fromDir+"\\tran*.mtx",)
          status = RunProgram("cmd.exe /c del "+fromDir+"\\nmot*.mtx",)
          status = RunProgram("cmd.exe /c del "+fromDir+"\\othr*.mtx",)
          status = RunProgram("cmd.exe /c del "+fromDir+"\\trip*.mtx",)
+         status = RunProgram("cmd.exe /c del "+fromDir+"\\CVM*.mtx",)
         
       end
 
@@ -254,7 +256,7 @@ Macro "Run SANDAG ABM"
       end
 
       //Combine CVM trip table and drop HDTM II tables
-      RunMacro("Combine CVM and ABM Matrices",properties,1)
+      RunMacro("Combine CVM and ABM Matrices",properties,iteration)
     
       //Create external commercial LD tables
       RunMacro("CVM Ext LD")
@@ -328,7 +330,8 @@ Macro "Run SANDAG ABM"
 	      status = RunProgram("cmd.exe /c del "+toDir+"\\tran*.mtx",)
 	      status = RunProgram("cmd.exe /c del "+toDir+"\\nmot*.mtx",)
 	      status = RunProgram("cmd.exe /c del "+toDir+"\\othr*.mtx",)
-	      status = RunProgram("cmd.exe /c del "+toDir+"\\trip*.mtx",)    
+	      status = RunProgram("cmd.exe /c del "+toDir+"\\trip*.mtx",)
+	      status = RunProgram("cmd.exe /c del "+toDir+"\\CVM*.mtx",)
 	   end
    end
 
