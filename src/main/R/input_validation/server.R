@@ -1,6 +1,3 @@
-options(shiny.maxRequestSize=10000*1024^2)
-options(shiny.port=1234)
-
 library(shiny)
 library(shinydashboard)
 library(DT)
@@ -9,65 +6,27 @@ library(tmap)
 library(dplyr)
 library(leaflet)
 library(readr)
+library(sqldf)
 
-source('checker_functions.R')
-
-read_data <- function(type,  inputPath){
+read_data <- function(type,  inputPath, buildNetwork){
   if(type == "Socioeconomic Data"){
     source("seData.R")
-    #getData is a function (with argument as inputPath) in seData.R to read csv file
+    #getData is a function (with argument as inputPath) in seData.R to read csv data file
     return(getData(inputPath))
   }
   else if (type == "Highway Network"){
     source("hwyData.R")
-    #getData is a function (with argument as inputPath) in hwyData.R to read bin file
-    return(getData(inputPath)) 
+    #getData is a function (with argument as inputPath and flag to build network) in hwyData.R to read highway bin file
+    return(getData(inputPath, buildNetwork)) 
   }
-  else{
+  else if (type == "Transit Network"){
+    source("transitData.R")
+    #getData is a function (with argument as inputPath and flag to build network) in transitData.R to read transit bin file
+    return(getData(inputPath, buildNetwork)) 
+  }
+  else
     return(NULL)
-  }
 }
-
-create_plots_old <- function(type, inputData, shapeFilePath){
-  if(type == "Socioeconomic Data"){
-    source("seData.R")
-    #getPlots is a function (with argument as inputData and shapeFilePath) in seData.R
-    return(getPlots(inputData, shapeFilePath))
-  }
-  else {
-    return(NULL) 
-  }
-}
-
-create_static_plots <- function(type, inputData, taz_shape){
-  if(type == "Socioeconomic Data"){
-    source("seData.R")
-    #getPlots is a function (with argument as inputData and taz_shape) in seData.R
-    return(getPlots(inputData, taz_shape))
-  }
-  else {
-    return(NULL) 
-  }
-}
-
-create_growth_plots <- function(growthData){
-  source("seData.R")
-  #getGrowthPlots is a function (with argument as growthData) in seData.R
-  return(getGrowthPlots(growthData))
-}
-
-create_ext_ext_growth_plot <- function(data, oCordon, dCordon){
-  source("seData.R")
-  return(getExtExtGrowthPlot(data, oCordon, dCordon))
-}
-
-create_ext_int_growth_plot <- function(data, cordonName){
-  source("seData.R")
-  return(getExtIntGrowthPlot(data, cordonName))
-}
-
-# The conditional panel to show when shiny is busy
-loadingPanel <- conditionalPanel(paste("input.action > 0 &&", "$('html').hasClass('shiny-busy')"), "Calculation in progress ...")
 
 shinyServer(server <- function(input, output, session){
   observeEvent(
@@ -96,28 +55,31 @@ shinyServer(server <- function(input, output, session){
   })
   
   input_location <- renderText({
-    #readDirectoryInput(session, 'inputDir')
-    return("C:\\Projects\\SANDAG\\ABM Support, 2016\\socioeconomic")
+    readDirectoryInput(session, 'inputDir')
+    #return("C:\\Projects\\SANDAG\\ABM Support, 2016\\socioeconomic")
     #return("C:\\Projects\\SANDAG\\ABM Support, 2016\\network_building")
   })
   
   shapefile_location <- renderText({
     #readDirectoryInput(session, 'shapeFileDir')
-    return("C:\\Projects\\SANDAG\\ABM Support, 2016\\taz_shape")
-    
+    return("C:\\Projects\\SANDAG\\ABM Support, 2016\\shapefiles")
   })
   
   growthData_location <- renderText({
     return("C:\\Projects\\SANDAG\\ABM Support, 2016\\growthFiles")
   })
   
+  build_network <- renderText({
+    input$buildNetwork
+  })
+  
   input_data <- reactive({
     input$action
     isolate({
-      read_data(input_type(), input_location())
+      read_data(input_type(), input_location(), build_network())
     })
   })
-  
+
   output$mainTabs <- renderUI({
     if(input_type() == "") {
       
@@ -125,24 +87,26 @@ shinyServer(server <- function(input, output, session){
     
     else if(input_type() == "Socioeconomic Data"){
       tabsetPanel(id = "mainTabs",
-          tabPanel("Report", br(), br(),
+          tabPanel("Ratio Checks", value = 1, br(), br(),
                    tagList(
                      tags$head(
                        tags$link(rel="stylesheet", type="text/css",href="js/style.css"),
                        tags$script(type="text/javascript", src = "js/busy.js")
                      )
                    ),
-                   
-                   div(class = "busy",  
-                       p("Calculation in progress ..."),
-                       img(src="js/hourglass.gif")
+                                          
+                   conditionalPanel(paste("input.action > 0 &&", "$('html').hasClass('shiny-busy')"),
+                     div(class = "busy",  
+                         p("Calculation in progress ..."),
+                         img(src="js/hourglass.gif")
+                     )
                    ),
                    
                    htmlOutput("employmentRatioCheck"), br(), br(),
                    htmlOutput("enrollmentRatioCheck")
           ),
           
-          tabPanel("Year By Year Growth",
+          tabPanel("Year By Year Growth", value = 2,
               tabsetPanel(id = "growthTabs",
                   tabPanel("Plots", br(), uiOutput("growthPlots")),
                   tabPanel("Ext - Ext Growth", br(),
@@ -156,12 +120,12 @@ shinyServer(server <- function(input, output, session){
               )
           ),
           
-          tabPanel("Static Plots",
+          tabPanel("Static Plots", value = 3,
                    br(), selectInput("staticMapNum", "Select Map:",
                                         choices = c("Military Employment" = 1, "Military Group Quarters" = 2,
-                                                        "School Enrollment (K to 8)" = 3, "School Enrollment (9 to 12)" = 4,
-                                                        "College Enrollment" = 5, "College (Other) Enrollment" = 6, "College Students" = 7,
-                                                        "Population Density" = 8, "Average Income" = 9), width = "225px"),
+                                                    "School Enrollment (K to 8)" = 3, "School Enrollment (9 to 12)" = 4,
+                                                    "College Enrollment" = 5, "College (Other) Enrollment" = 6, "College Students" = 7,
+                                                    "Population Density" = 8, "Average Income" = 9), width = "225px"),
                    tagList(
                      tags$head(
                        tags$link(rel="stylesheet", type="text/css",href="js/style.css"),
@@ -175,25 +139,14 @@ shinyServer(server <- function(input, output, session){
                    ),
                    
                    plotOutput("staticPlot", width = "800px", height = "600px")
-                   
-                   #br(), plotOutput("spatialPlot1", width = "800px", height = "600px"),
-                   #br(), plotOutput("spatialPlot2", width = "800px", height = "600px"),
-                   #br(), plotOutput("spatialPlot3", width = "800px", height = "600px"),
-                   #br(), plotOutput("spatialPlot4", width = "800px", height = "600px"),
-                   #br(), plotOutput("spatialPlot5", width = "800px", height = "600px"),
-                   #br(), plotOutput("spatialPlot6", width = "800px", height = "600px"),
-                   #br(), plotOutput("spatialPlot7", width = "800px", height = "600px"),
-                   #br(), plotOutput("spatialPlot8", width = "800px", height = "600px"),
-                   #br(), plotOutput("spatialPlot9", width = "800px", height = "600px")
           ),
 
-          tabPanel("Interactive Plots", 
-                   br(), fluidRow(column(7, offset = 5, align="left",
-                            selectInput("leafletMapNum", "Select Map:",
-                                     choices = c("Military Employment" = 1, "Military Group Quarters" = 2,
-                                                 "School Enrollment (K to 8)" = 3, "School Enrollment (9 to 12)" = 4,
-                                                 "College Enrollment" = 5, "College (Other) Enrollment" = 6, "College Students" = 7,
-                                                 "Population Density" = 8, "Average Income" = 9), width = "220px"))),
+          tabPanel("Interactive Plots", value = 4,
+                   br(), selectInput("leafletMapNum", "Select Map:",
+                                      choices = c("Military Employment" = 1, "Military Group Quarters" = 2,
+                                                  "School Enrollment (K to 8)" = 3, "School Enrollment (9 to 12)" = 4,
+                                                  "College Enrollment" = 5, "College (Other) Enrollment" = 6, "College Students" = 7,
+                                                  "Population Density" = 8, "Average Income" = 9), width = "220px"),
                    tagList(
                      tags$head(
                        tags$link(rel="stylesheet", type="text/css",href="js/style.css"),
@@ -209,58 +162,131 @@ shinyServer(server <- function(input, output, session){
                    tagList(
                      tags$head(
                        tags$style(
-                         ".leaflet .legend {line-height: 22px;}"
-                         #".leaflet .legend i{float: left;}",
-                         #".leaflet .legend label{float:left; text-align: left;}",
-                         #".leaflet .legend span{position: absolute; top: 0; left: 0; float: left; text-align: left;}"
+                         ".leaflet .legend {line-height: 22px;}",
+                         ".leaflet .leaflet-control-zoom-in {position: fixed; top: 400px;}",
+                         ".leaflet .leaflet-control-zoom-out {position: fixed; top: 426px;}"
                        )
                      )
                    ),
                    
                    leafletOutput("leafletPlot", width = 800, height = 600), actionButton("reset_leaflet", "Reset view")
                    
-                   #br(), fluidRow(column(8, align="center", h4("Military Employment"))),
-                   #leafletOutput("leafletPlot_milEmp", width = 800, height = 550), actionButton("reset_milEmp", "Reset view"),
-                   #br(), br(), fluidRow(column(8, align="center", h4("Military Group Quarters"))),
-                   #leafletOutput("leafletPlot_milGQ", width = 800, height = 550), actionButton("reset_milGQ", "Reset view"),
-                   #br(), br(), fluidRow(column(8, align="center", h4("School Enrollment"))),
-                   #leafletOutput("leafletPlot_schoolEnroll", width = 800, height = 550), actionButton("reset_schoolEnroll", "Reset view"),
-                   #br(), br(), fluidRow(column(8, align="center", h4("College Enrollment"))),
-                   #leafletOutput("leafletPlot_collegeEnroll", width = 800, height = 550), actionButton("reset_collEnroll", "Reset view"),
-                   #br(), br(), fluidRow(column(8, align="center", h4("College Students"))),
-                   #leafletOutput("leafletPlot_collegeStudent", width = 800, height = 550), actionButton("reset_collStudent", "Reset view"),
-                   #br(), br(), fluidRow(column(8, align="center", h4("Population Density"))),
-                   #leafletOutput("leafletPlot_popDensity", width = 800, height = 550), actionButton("reset_popDen", "Reset view"),
-                   #br(), br(), fluidRow(column(8, align="center", h4("Average Income"))),
-                   #leafletOutput("leafletPlot_averageIncome", width = 800, height = 550), actionButton("reset_avgInc", "Reset view")
           ),
           
-          tabPanel("SB Comparison", br(), dataTableOutput("sbComparison"))
+          tabPanel("SB Comparison", value = 5, br(), dataTableOutput("sbComparison"))
       )
     }
     
     else if(input_type() == "Highway Network") {
       tabsetPanel(id = "mainTabs",
-          tabPanel("Report", br(),
-                    br(), tableOutput("missingCheck1"),
-                    br(), tableOutput("missingCheck2"),
-                    br(), tableOutput("missingCheck3"),
-                    br(), br(), box(title = "Missing Attribute Checks", solidHeader = TRUE, status = "info", width = 5, collapsible = TRUE, collapsed = TRUE, tableOutput("missingCheck4"))),
+          tabPanel("Summary", value = 1, br(), br(),
+                   tagList(
+                     tags$head(
+                       tags$link(rel="stylesheet", type="text/css",href="js/style2.css"),
+                       tags$script(type="text/javascript", src = "js/busy.js")
+                     )
+                   ),
+                   
+                   conditionalPanel(paste("input.action > 0 &&", "$('html').hasClass('shiny-busy')"),
+                                    br(), br(), br()
+                   ),
+                   
+                   conditionalPanel(paste("input.action > 0 &&", "$('html').hasClass('shiny-busy')"),
+                      div(class = "busy",  
+                          br(), br(), br(),
+                          p("Calculation in progress ..."),
+                          img(src="js/hourglass.gif")
+                      )
+                   ),
+
+                   fluidRow(
+                     div(style="display:inline-block", class="col-lg-12",
+                         box(title = "Lane Miles Summary (Functional Class)", solidHeader = TRUE, status = "info", width = 5, collapsible = TRUE, collapsed = TRUE,
+                             tableOutput("laneMilesSummaryByFC"),
+                             column(downloadButton("downloadLaneMilesSummaryByFC", "Save"), width = 12, align = 'right')
+                         ),
+                         box(title = "Lane Miles Summary (Jurisdiction)", solidHeader = TRUE, status = "info", width = 5, collapsible = TRUE, collapsed = TRUE,
+                             tableOutput("laneMilesSummaryByJUR"),
+                             column(downloadButton("downloadLaneMilesSummaryByJUR", "Save"), width = 12, align = 'right')
+                         )
+                     )
+                   ),
+                   
+                   fluidRow(
+                     div(style="display:inline-block", class="col-lg-12",
+                         box(title = "Speed Summary", solidHeader = TRUE, status = "info", width = 5, collapsible = TRUE, collapsed = TRUE,
+                             tableOutput("speedSummary"),
+                             column(downloadButton("downloadSpeedSummary", "Save"), width = 12, align = 'right')
+                         ),
+                         box(title = "IFC and IHOV Summary", solidHeader = TRUE, status = "info", width = 5, collapsible = TRUE, collapsed = TRUE,
+                             tableOutput("ifcihovTollSummary"),
+                             column(downloadButton("downloadIFCIHOVTollSummary", "Save"), width = 12, align = 'right')
+                         )
+                     )
+                   ),
+                   
+                   fluidRow(
+                     div(style="display:inline-block", class="col-lg-12",
+                         box(title = "Toll Summary (IFC)", solidHeader = TRUE, status = "info", width = 5, collapsible = TRUE, collapsed = TRUE,
+                             tableOutput("ifcTollSummary"),
+                             column(downloadButton("downloadIFCTollSummary", "Save"), width = 12, align = 'right')
+                         ),
+                         box(title = "Toll Summary (IHOV)", solidHeader = TRUE, status = "info", width = 5, collapsible = TRUE, collapsed = TRUE,
+                             tableOutput("ihovTollSummary"),
+                             column(downloadButton("downloadIHOVTollSummary", "Save"), width = 12, align = 'right')
+                        )
+                     )
+                   ),              
+                   
+                   fluidRow(
+                     div(style="display:inline-block", class="col-lg-12",
+                         box(title = "No. of Lanes Summary", solidHeader = TRUE, status = "info", width = 10, collapsible = TRUE, collapsed = TRUE,
+                             tableOutput("lanesSummary"),
+                             column(downloadButton("downloadLanesSummary", "Save"), width = 12, align = 'right')
+                         )
+                     )
+                   )
+                   
+                   
+          ),
           
-          tabPanel("Highway Data", br(),
-                   fluidRow(textInput("hwycovid", "SEARCH HWYCOVID:", "", width = "200px"),
-                            br(), dataTableOutput("hwyData"))),
+          tabPanel("Run Queries", value = 2, br(),
+                   selectInput("hwyQuery", "Select Query:",
+                               #choices = c("IFC = 1 and ISPD < 55", 
+                               #            "(IFC > 1 and IFC < 8) and ISPD > 60",
+                               #            "IFC = 10 and (ITOLLO > 0 or ITOLLA > 0 or ITOLLP > 0)",
+                               #            "IHOV = 1 and (ITOLLO > 0 or ITOLLA > 0 or ITOLLP > 0)", 
+                               #            "IFC = 1 and IHOV = 3 and (ITOLLO = 0 or ITOLLA = 0 or ITOLLP = 0)",
+                               #            "(IFC > 1 and IFC < 8) and IHOV = 4",
+                               #            "IFC > 1 and ((ABLNA > 5 or ABLNO > 5 or ABLNP > 5)or(BALNA > 5 or BALNO > 5 or BALNP > 5))"
+                               #           ),
+                               
+                               choices = c("", "Freeway links with posted speed less than 55mph" = "IFC = 1 and ISPD < 55", 
+                                           "Arterial links with posted speed more than 60mph" = "(IFC > 1 and IFC < 8) and ISPD > 60",
+                                           "Centroid links with toll values" = "IFC = 10 and (ITOLLO > 0 or ITOLLA > 0 or ITOLLP > 0)",
+                                           "Free links that have a toll value" = "IHOV = 1 and (ITOLLO > 0 or ITOLLA > 0 or ITOLLP > 0)", 
+                                           "Managed lanes that have no toll values" = "IFC = 1 and IHOV = 3 and (ITOLLO = 0 or ITOLLA = 0 or ITOLLP = 0)",
+                                           "Arterial links coded as toll links" = "(IFC > 1 and IFC < 8) and IHOV = 4",
+                                           "Non freeway links with more than 5 lanes in any direction" = "IFC > 1 and ((ABLNA > 5 or ABLNO > 5 or ABLNP > 5)or(BALNA > 5 or BALNO > 5 or BALNP > 5))"
+                               ),
+                               
+                               width = "400px"),
+                   br(), dataTableOutput("hwyQueryData")       
+          ),
           
-          tabPanel("Zone Connectors", br(), br(),
-                   fluidRow(dataTableOutput("zoneConnectors")))
+          tabPanel("Highway Data", value = 3, br(),
+                   tags$head(tags$style(type="text/css", ".span1 {display: inline-block; padding-right: 50px;}")),
+                   div(class="span1",textInput("hwycovid", "SEARCH HWYCOVID(s):", "", width = "400px")),
+                   div(class="span1",textInput("selCols", "SELECT COLUMN(s):", "", width = "400px")),
+                   br(), dataTableOutput("hwyData")
+          )
       )
     }
     
     else if(input_type() == "Transit Network") {
       tabsetPanel(id = "mainTabs",
-                  tabPanel("Tab 1", br(), br()),
-                  tabPanel("Tab 2", br(), br()),
-                  tabPanel("Tab 3", br(), br())
+                  tabPanel("Transit Routes", value = 1, br(), dataTableOutput("transitRoutesData")),
+                  tabPanel("Transit Stops", value = 2, br(), dataTableOutput("transitStopsData"))
       )
     }
     
@@ -285,8 +311,8 @@ shinyServer(server <- function(input, output, session){
         str6 <- "------------------------------------------------------"
         
         
-        if(ratio < 0.9 | ratio > 1.1){
-          str7 <- paste("<b>", "WARNING:", "</b>", "Ratio is NOT within the expected range of", 0.9, "and", 1.1)
+        if(ratio < employment.ratio.min.val | ratio > employment.ratio.max.val){
+          str7 <- paste("<b>", "WARNING:", "</b>", "Ratio is NOT within the expected range of", employment.ratio.min.val, "and", employment.ratio.max.val)
           HTML(paste(str1, str2, str3, str4, str5, str6, str7, sep = '<br/>'))
         } else {
           HTML(paste(str1, str2, str3, str4, str5, str6, sep = '<br/>'))
@@ -310,8 +336,8 @@ shinyServer(server <- function(input, output, session){
         str5 <- paste("Ratio (Enrollment to Students):", prettyNum(round((totalSchoolEnroll/totalSchoolStudents),3), big.mark = ","))
         str6 <- "------------------------------------------------------"
         
-        if(ratio < 0.9 | ratio > 1.1){
-          str7 <- paste("<b>", "WARNING:", "</b>", "Ratio is NOT within the expected range of", 0.9, "and", 1.1)
+        if(ratio < enrollment.ratio.min.val | ratio > enrollment.ratio.max.val){
+          str7 <- paste("<b>", "WARNING:", "</b>", "Ratio is NOT within the expected range of", enrollment.ratio.min.val, "and", enrollment.ratio.max.val)
           HTML(paste(str1, str2, str3, str4, str5, str6, str7, sep = '<br/>'))
         } else {
           HTML(paste(str1, str2, str3, str4, str5, str6, sep = '<br/>'))
@@ -328,9 +354,8 @@ shinyServer(server <- function(input, output, session){
   spatialPlotNum <- reactive({input$staticMapNum})
   
   observe({
-    if (!is.null(input_data()))
-      #values[['spatialPlots']] <- create_plots_old(input_type(), input_data(), shapefile_location())
-      values[['spatialPlots']] <- create_static_plots(input_type(), input_data(), taz_shape())
+    if (!is.null(input_data()) && input_type() == "Socioeconomic Data")
+      values[['spatialPlots']] <- getStaticPlots(input_data(), taz_shape())
   })
   
   output$staticPlot <- renderPlot({
@@ -357,73 +382,26 @@ shinyServer(server <- function(input, output, session){
         return(NULL)
   })
   
-  #output$spatialPlot1 <- renderPlot({
-  #  if(input$action > 0)
-  #    values[['spatialPlots']][[1]]
-  #})
-  #
-  #output$spatialPlot2 <- renderPlot({
-  #  if(input$action > 0)
-  #    values[['spatialPlots']][[2]]
-  #})
-  #
-  #output$spatialPlot3 <- renderPlot({
-  #  if(input$action > 0)
-  #    values[['spatialPlots']][[3]]
-  #})
-  #
-  #output$spatialPlot4 <- renderPlot({
-  #  if(input$action > 0)
-  #    values[['spatialPlots']][[4]]
-  #})
-  #
-  #output$spatialPlot5 <- renderPlot({
-  #  if(input$action > 0)
-  #    values[['spatialPlots']][[5]]
-  #})
-  #
-  #output$spatialPlot6 <- renderPlot({
-  #  if(input$action > 0)
-  #    values[['spatialPlots']][[6]]
-  #})
-  #
-  #output$spatialPlot7 <- renderPlot({
-  #  if(input$action > 0)
-  #    values[['spatialPlots']][[7]]
-  #})
-  #
-  #output$spatialPlot8 <- renderPlot({
-  #  if(input$action > 0)
-  #    values[['spatialPlots']][[8]]
-  #})
-  #
-  #output$spatialPlot9 <- renderPlot({
-  #  if(input$action > 0)
-  #    values[['spatialPlots']][[9]]
-  #})
-  
-  
   #-------------------------------------------------------#
   #------------- SE data year over year growth -----------#
   #-------------------------------------------------------#
   originCordon <- reactive({input$origin_cordon})
-  #dtaz <- reactive({input$dest})
   cordonName <- reactive({input$cordon})
   
   getGrowthData <- function(){
-    read_csv(paste(growthData_location(), "parameters_by_years.csv", sep = "/"))
+    read_csv(paste(growthData_location(), growth.data.file.name, sep = "/"))
   }
   
   getExtExtGrowthData <- function(){
-    read_csv(paste(growthData_location(), "externalExternalTrips_by_year.csv", sep = "/"))
+    read_csv(paste(growthData_location(), ext.ext.growth.data.file.name, sep = "/"))
   }
   
   getExtIntGrowthData <- function(){
-    read_csv(paste(growthData_location(), "externalInternalControlTotals_by_year.csv", sep = "/"))
+    read_csv(paste(growthData_location(), ext.int.growth.data.file.name, sep = "/"))
   }
   
   getCordonDefinition <- function(){
-    read_csv(paste(growthData_location(), "cordon_definition.csv", sep = "/"))
+    read_csv(paste(growthData_location(), cordon.definition.file.name, sep = "/"))
   }
   
   output$extExtOriginZones <- renderUI({
@@ -452,7 +430,7 @@ shinyServer(server <- function(input, output, session){
   
   get_growth_plot_output_list <- function() {
     growth_data <- getGrowthData()
-    growth_plots <- create_growth_plots(growth_data)
+    growth_plots <- getGrowthPlots(growth_data)
 
     #plotsPath = "C:\\Projects\\SANDAG\\ABM Support, 2016\\shinyR\\plots"
     #savePlots <- 0
@@ -503,7 +481,7 @@ shinyServer(server <- function(input, output, session){
     for(d in destCordons){
       if(d == originCordon()) next
       subset_data <- extExtGrowthData %>% filter(origCordonName == originCordon(), destCordonName == d)
-      extExt_growth_plots[[i]] <- create_ext_ext_growth_plot(subset_data, originCordon(), d)
+      extExt_growth_plots[[i]] <- getExtExtGrowthPlot(subset_data, originCordon(), d)
       i <- i + 1
     } 
     
@@ -526,7 +504,7 @@ shinyServer(server <- function(input, output, session){
       extIntGrowthData <- left_join(extIntGrowthData, cordonDef, by = c("taz" = "TAZ")) 
       if(!is.null(cordonName())){
         subset_data <- extIntGrowthData %>% filter(Name == cordonName())
-        create_ext_int_growth_plot(subset_data, cordonName())
+        getExtIntGrowthPlot(subset_data, cordonName())
       }
       else 
         return(NULL)
@@ -576,25 +554,6 @@ shinyServer(server <- function(input, output, session){
         map <- createAverageIncomeLeaflet(taz_shape())
       
     return(map)
-    
-    #if(leafNum() == 1)
-    #  values[['leafletPlots']][[1]]
-    #else if(leafNum() == 2)
-    #  values[['leafletPlots']][[2]]
-    #else if(leafNum() == 3)
-    #  values[['leafletPlots']][[3]]
-    #else if(leafNum() == 4)
-    #  values[['leafletPlots']][[4]]
-    #else if(leafNum() == 5)
-    #  values[['leafletPlots']][[5]]
-    #else if(leafNum() == 6)
-    #  values[['leafletPlots']][[6]]
-    #else if(leafNum() == 7)
-    #  values[['leafletPlots']][[7]]
-    #else if(leafNum() == 8)
-    #  values[['leafletPlots']][[8]]
-    #else if(leafNum() == 9)
-    #  values[['leafletPlots']][[9]]
   })
   
   observe({
@@ -602,85 +561,15 @@ shinyServer(server <- function(input, output, session){
     leafletProxy("leafletPlot") %>% setView(-116.88, 32.98, 9) 
   })
 
-  #output$leafletPlot_milEmp <- renderLeaflet({
-  #  if(input$action > 0)
-  #    createMilEmpLeaflet(taz_shape())
-  #})
-  #
-  #observe({
-  #  input$reset_milEmp
-  #  reset_leaflet_view("leafletPlot_milEmp")
-  #})
-  #
-  #output$leafletPlot_milGQ <- renderLeaflet({
-  #  if(input$action > 0)
-  #    createMilGQLeaflet(taz_shape())
-  #})
-  #
-  #observe({
-  #  input$reset_milGQ
-  #  reset_leaflet_view("leafletPlot_milGQ")
-  #})
-  #
-  #output$leafletPlot_schoolEnroll <- renderLeaflet({
-  #  if(input$action > 0)
-  #    createSchoolEnrollLeaflet(taz_shape())
-  #})
-  #
-  #observe({
-  #  input$reset_schoolEnroll
-  #  reset_leaflet_view("leafletPlot_schoolEnroll")
-  #})
-  #
-  #output$leafletPlot_collegeEnroll <- renderLeaflet({
-  #  if(input$action > 0)
-  #    createCollegeEnrollLeaflet(taz_shape())
-  #})
-  #
-  #observe({
-  #  input$reset_collEnroll
-  #  reset_leaflet_view("leafletPlot_collEnroll")
-  #})
-  #
-  #output$leafletPlot_collegeStudent <- renderLeaflet({
-  #  if(input$action > 0)
-  #    createCollegeStudentsLeaflet(taz_shape())
-  #})
-  #
-  #observe({
-  #  input$reset_collStudent
-  #  reset_leaflet_view("leafletPlot_collegeStudent")
-  #})
-  #
-  #output$leafletPlot_averageIncome <- renderLeaflet({
-  #  if(input$action > 0)
-  #    createAverageIncomeLeaflet(taz_shape())
-  #})
-  #
-  #observe({
-  #  input$reset_avgInc
-  #  reset_leaflet_view("leafletPlot_averageIncome")
-  #})
-  #
-  #output$leafletPlot_popDensity <- renderLeaflet({
-  #  if(input$action > 0)
-  #    createPopDenLeaflet(taz_shape())
-  #})
-  #
-  #observe({
-  #  input$reset_popDen
-  #  reset_leaflet_view("leafletPlot_popDensity")
-  #})
-  
   #----------------------------------------------#
   #----------- Service Bureau Comparison --------#
   #----------------------------------------------#
   getSBData <- function(){
-    read_csv(paste(input_location(), "mgra13_based_input2012_sb.csv", sep = "/"))
+    read_csv(paste(input_location(), sb.mgra.data.file.name, sep = "/"))
   }
   
   getMGRAList <- function(){
-    mgraList <- read_csv(paste(input_location(), "lu.csv", sep = "/"))
+    mgraList <- read_csv(paste(input_location(), sb.mgra.list.file.name, sep = "/"))
     mgraList <- as.list(unique(mgraList %>% select(mgra)))
     return(mgraList)
   }
@@ -694,55 +583,29 @@ shinyServer(server <- function(input, output, session){
       mgra_list <- getMGRAList()
       sbCompareData <- compareSBData(sb_data, input_data(), mgra_list)
       
-      datatable(sbCompareData, options = list("scrollX" = TRUE, "searching" = FALSE, "processing" = TRUE, "lengthMenu" = c(10,25,50,100)), rownames = FALSE)
+      datatable(sbCompareData, options = list("scrollX" = TRUE, "searching" = FALSE, "processing" = TRUE, "lengthMenu" = c(9,24,60,90)), rownames = FALSE)
     }
-  })
-  
-  #----------------------------------------------#
-  #---------------- Highway Data Checks ---------#
-  #----------------------------------------------#
-  output$missingCheck1 <- renderTable({
-    if(input$action > 0){
-      if(is.null(input_data()))
-        return()
-      as.data.frame(checkMissingAttribute("HWYCOV.ID", "Link ID", key, input_data()))
-    }
-  }, include.rownames=FALSE)
-  
-  output$missingCheck2 <- renderTable({
-    if(input$action > 0){
-      if(is.null(input_data()))
-        return()
-      as.data.frame(checkMissingAttribute("SPEED", "Link Speed", key, input_data()))
-    }
-  }, include.rownames=FALSE)
-  
-  output$missingCheck3 <- renderTable({
-    if(input$action > 0){
-      if(is.null(input_data()))
-        return()
-      as.data.frame(checkMissingAttribute("IFC", "Functional Classification", key, input_data()))
-    }
-  }, include.rownames=FALSE)
-  
-  output$missingCheck4 <- renderTable({
-    if(input$action > 0){
-      if(is.null(input_data()))
-        return()
-      attrNames <- c("HWYCOV.ID", "SPEED", "IFC")
-      attrDescriptions <- c("Link ID", "Link Speed", "Functional Classification")
-      
-      as.data.frame(checkMissingAttributeNew(attrNames, attrDescriptions, key, input_data()))
-    }
-  }, include.rownames=FALSE)
-  
+  })  
   
   #----------------------------------------------#
   #-------------- Highway Network Data ----------#
   #----------------------------------------------#
+  
   updateHwyDataForTable <- reactive({
     dataFilteredForTable <- input_data()
-    if(input$hwycovid > 0) dataFilteredForTable <- dataFilteredForTable %>% filter(HWYCOV.ID == input$hwycovid)
+    if(!(input$hwycovid == "")){
+      selectIDs <- gsub(" ", "", input$hwycovid)
+      selectIDs <- unlist(strsplit(selectIDs, ","))
+      
+      dataFilteredForTable <- dataFilteredForTable %>% filter(HWYCOV.ID %in% selectIDs)
+    }
+    
+    if(!(input$selCols == "")){
+      selectColumns <- gsub(" ", "", input$selCols)
+      selectColumns <- unlist(strsplit(selectColumns, ","))
+      dataFilteredForTable <- dataFilteredForTable[, c(hwy.key, selectColumns)]
+    }
+    
     dataFilteredForTable
   })
   
@@ -755,21 +618,116 @@ shinyServer(server <- function(input, output, session){
     }
   })
   
-  output$test <- reactive({
-    paste("value is ", input$hwycovid)
-  })
+  #----------------------------------------------#
+  #---------- Highway Network Summaries ---------#
+  #----------------------------------------------#
   
-  #----------------------------------------------#
-  #---------------- Zone Connectors -------------#
-  #----------------------------------------------#
-  output$zoneConnectors <- renderDataTable({
+  output$laneMilesSummaryByFC <- renderTable({
     if(input$action > 0){
       if(is.null(input_data()))
         return()
-      dataForTable <- input_data() %>% filter(IFC == 10)
+      dataForTable <- createLaneMileSummaryByFC(input_data())
+      dataForTable
+    }
+  }, include.rownames=FALSE, align='rrlrr')
+  
+  output$downloadLaneMilesSummaryByFC = downloadHandler(
+    filename = 'LaneMilesByIFC.csv',
+    content = function(file) {
+      write.csv(as.data.frame(createLaneMileSummaryByFC(input_data())), file, row.names = F)
+    }
+  )
+  
+  output$laneMilesSummaryByJUR <- renderTable({
+    if(input$action > 0){
+      if(is.null(input_data()))
+        return()
+      createLaneMileSummaryByJUR(input_data())
+    }
+  }, include.rownames=FALSE, align='rrlrr')
+  
+  output$speedSummary <- renderTable({
+    if(input$action > 0){
+      if(is.null(input_data()))
+        return()
+      createSpeedSummary(input_data())
+    }
+  }, include.rownames=FALSE, align='rrlrr')
+  
+  output$lanesSummary <- renderTable({
+    if(input$action > 0){
+      if(is.null(input_data()))
+        return()
+      createLanesSummary(input_data())
+    }
+  }, include.rownames=FALSE, align='rrlrrrrrr')
+  
+  output$ihovTollSummary <- renderTable({
+    if(input$action > 0){
+      if(is.null(input_data()))
+        return()
+      createIHOVTollSummary(input_data())
+    }
+  }, include.rownames=FALSE, align='rrrrrrrr')
+  
+  output$ifcihovTollSummary <- renderTable({
+    if(input$action > 0){
+      if(is.null(input_data()))
+        return()
+      createIFCIHOVTollSummary(input_data())
+    }
+  }, include.rownames=FALSE, align='rrlrrrr')
+  
+  output$ifcTollSummary <- renderTable({
+    if(input$action > 0){
+      if(is.null(input_data()))
+        return()
+      createIFCTollSummary(input_data())
+    }
+  }, include.rownames=FALSE, align='rrrrrrrr')
+  
+  
+  #----------------------------------------------#
+  #------------- Highway Network Query ----------#
+  #----------------------------------------------#
+  
+  getHwyQueryData <- reactive({
+    qdata <- input_data()
+    qdata <- qdata %>% select(HWYCOV.ID, IFC, IHOV, ISPD, ITOLLO, ITOLLA, ITOLLP, ABLNO, ABLNA, ABLNP, BALNO, BALNA, BALNP)
+    create_query <- paste("SELECT * FROM qdata WHERE (", input$hwyQuery, ")", sep = "")
+    queryData <- sqldf(create_query)
+    queryData
+  })
+  
+  output$hwyQueryData <- renderDataTable({
+    if(input$action > 0){
+      if(is.null(input_data()))
+        return()
+      if(input$hwyQuery == "")
+        return()
+      dataForTable <- getHwyQueryData()
       datatable(dataForTable, options = list("scrollX" = TRUE, "searching" = FALSE, "processing" = TRUE, "lengthMenu" = c(10,25,50,100)), rownames = FALSE)
     }
   })
 
-})
+  #----------------------------------------------#
+  #-------------- Transit Network Data ----------#
+  #----------------------------------------------#
+  output$transitRoutesData <- renderDataTable({
+    if(input$action > 0){
+      if(is.null(input_data()))
+        return()
+      dataForTable <- input_data()[[1]]
+      datatable(dataForTable, options = list("scrollX" = TRUE, "searching" = FALSE, "processing" = TRUE, "lengthMenu" = c(10,25,50,100)), rownames = FALSE)
+    }
+  })
 
+  output$transitStopsData <- renderDataTable({
+    if(input$action > 0){
+      if(is.null(input_data()))
+        return()
+      dataForTable <- input_data()[[2]]
+      datatable(dataForTable, options = list("scrollX" = TRUE, "searching" = FALSE, "columnDefs" = list(list(width = "5%", targets = 0)), "processing" = TRUE, "lengthMenu" = c(10,25,50,100)), rownames = FALSE)
+    }
+  })
+})

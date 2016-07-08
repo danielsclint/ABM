@@ -1,6 +1,6 @@
 # Ashish Kulshrestha | kulshresthaa@pbworld.com | Parsons Brinckerhoff
-# Last Edited: May 25, 2016
-# Script for socioeconomic data (SANDAG)
+# Last Edited: June 27, 2016
+# Script for manipulating/plotting socioeconomic data
 
 library(readr)
 library(ggplot2)
@@ -46,7 +46,7 @@ getData <- function(path){
 }
 
 # create the required plots (static)
-getPlots <- function(inputData, taz_shape){
+getStaticPlots <- function(inputData, taz_shape){
   # to test function 
   #mgra_shape <- readOGR("C:/Projects/SANDAG/Military_Trips/inputs/shapefiles/mgra/mgra_13.shp", layer = "mgra_13")
   #mgra_shape@data <- left_join(mgra_shape@data, data, by = c("MGRA" = "mgra"))
@@ -115,7 +115,6 @@ getPlots <- function(inputData, taz_shape){
   P9 <- P9 + tm_compass(type = "4star", size = 2, show.labels = 2, position = c("right", "top"))
   
   return(list(P1, P2, P3, P4, P5, P6, P7, P8, P9))
-  
 }
 
 createTazData <- function(mgraData){
@@ -129,28 +128,6 @@ createTazData <- function(mgraData){
   tazData[is.na(tazData)] <- 0
   
   return(tazData)
-}
-
-compareSBDataOld <- function(sb_data, base_data, mgra_list){
-  base_data <- base_data %>% filter(mgra %in% mgra_list)
-  sb_data <- sb_data %>% filter(mgra %in% mgra_list)
-  
-  baseSelectFields <- c("mgra", "hh", "hhp", "gq_civ", "gq_mil", "emp_total", "EnrollGradeKto8", "EnrollGrade9to12", "collegeEnroll", "HotelRoomTotal")
-  sbSelectFields <- c("mgra", "hh", "hhp", "gq_civ", "gq_mil", "emp_total", "enrollgradekto8", "enrollgrade9to12", "collegeenroll", "hotelroomtotal")
-
-  base_data <- base_data[,baseSelectFields]
-  sb_data <- sb_data[,sbSelectFields]
-  
-  names(base_data) <- c("MGRA", "HH (Base)", "POP_REG (Base)", "POP_GQ_CIV (Base)", "POP_GQ_MIL (Base)", "EMP (Base)", "ENROLL_KTO8 (Base)", "ENROLL_9TO12 (Base)", "ENROLL_COLL (BASE)", "HOTEL_ROOMS (Base)")
-  names(sb_data) <- c("MGRA", "HH (SB)", "POP_REG (SB)", "POP_GQ_CIV (SB)", "POP_GQ_MIL (SB)", "EMP (SB)", "ENROLL_KTO8 (SB)", "ENROLL_9TO12 (SB)", "ENROLL_COLL (SB)", "HOTEL_ROOMS (SB)")
-
-  data <- left_join(base_data, sb_data, by = "MGRA")  
-  data <- data[, c(1,2,11,3,12,4,13,5,14,6,15,7,16,8,17,9,18,10,19)]
-  
-  data$"EMP (SB)" <- round(data$"EMP (SB)", 0)
-  data$"EMP (Base)" <- round(data$"EMP (Base)", 0)
-  
-  return(data)
 }
 
 compareSBData <- function(sb_data, base_data, mgra_list){
@@ -199,8 +176,6 @@ createMilEmpLeaflet <- function(taz_shape){
   map
 }
 
-#map1 <- createMilEmpLeaflet(taz_shape)
-
 createMilGQLeaflet <- function(taz_shape){
   taz_popup <- paste0("<strong>TAZ: </strong>", taz_shape$TAZ, 
                       "<br><strong>Military GQ: </strong>", taz_shape$gq_mil)
@@ -220,8 +195,6 @@ createMilGQLeaflet <- function(taz_shape){
   #map <- map %>% setMaxBounds(-116.014252, 32.520691, -117.714043, 33.462219)
   map
 }
-
-#map2 <- createMilGQLeaflet(taz_shape)
 
 createSchoolEnrollLeaflet <- function(taz_shape){
   taz_popup <- paste0("<strong>TAZ: </strong>", taz_shape$TAZ, 
@@ -250,7 +223,6 @@ createSchoolEnrollLeaflet <- function(taz_shape){
   map
 }
 
-#map3 <- createSchoolEnrollLeaflet(taz_shape)
 
 createSchoolKto8EnrollLeaflet <- function(taz_shape){
   taz_popup <- paste0("<strong>TAZ: </strong>", taz_shape$TAZ, 
@@ -289,33 +261,6 @@ createSchool9to12EnrollLeaflet <- function(taz_shape){
   map
 }
 
-createCollegeEnrollLeafletOld <- function(taz_shape){
-  taz_popup <- paste0("<strong>TAZ: </strong>", taz_shape$TAZ, 
-                      "<br><strong>College Enrollment: </strong>", taz_shape$collegeEnroll,
-                      "<br><strong>Other College Enrollment: </strong>", taz_shape$otherCollegeEnroll)
-  pal <- c("#F1F1F1", brewer.pal(2, "YlOrBr"))
-  opts <- providerTileOptions(opacity = 0)
-  
-  taz_shape$enroll_college_cat <- cut(taz_shape$collegeEnroll, c(0,1,5000,50000), labels=c("None", "< 5000", ">= 5000"), include.lowest=FALSE, right=FALSE)
-  taz_shape$enroll_other_college_cat <- cut(taz_shape$otherCollegeEnroll, c(0,1,5000,50000), labels=c("None", "< 5000", ">= 5000"), include.lowest=FALSE, right=FALSE)
-  taz_shape@data <- taz_shape@data %>% select(OBJECTID, TAZ, enroll_college_cat, enroll_other_college_cat)
-  
-  map <- leaflet(taz_shape) %>% addProviderTiles("CartoDB.PositronNoLabels", options = opts)
-  map <- map %>% addPolygons(fillColor = ~colorFactor(pal, taz_shape$enroll_college_cat)(enroll_college_cat), fillOpacity = 0.8, 
-                             weight = 0.5, popup = taz_popup, color = "#d7d7db", group = "College")
-  
-  map <- map %>% addPolygons(fillColor = ~colorFactor(pal, taz_shape$enroll_other_college_cat)(enroll_other_college_cat), fillOpacity = 0.8, 
-                             weight = 0.5, popup = taz_popup, color = "#d7d7db", group = "Other College")
-  
-  map <- map %>% addLegend("bottomleft", title = "Enrollment", pal = colorFactor(pal, NULL), values = ~enroll_college_cat)
-  
-  map <- map %>% addLayersControl(overlayGroups = c("K to 8", "9 to 12"), position = c("topright"), options = layersControlOptions(collapsed = FALSE))
-  map <- map %>% hideGroup("Other College")
-  
-  map <- map %>% setView(-116.88, 32.98, 9)
-  map
-}
-
 createCollegeEnrollLeaflet <- function(taz_shape){
   taz_popup <- paste0("<strong>TAZ: </strong>", taz_shape$TAZ, 
                       "<br><strong>College Enrollment: </strong>", taz_shape$collegeEnroll)
@@ -349,7 +294,7 @@ createCollegeOtherEnrollLeaflet <- function(taz_shape){
                              weight = 0.5, popup = taz_popup, color = "#d7d7db")
   
   map <- map %>% addLegend("bottomleft", title = "Enrollment", pal = colorFactor(pal, NULL), values = ~enroll_other_college_cat)
-
+  
   map <- map %>% setView(-116.88, 32.98, 9)
   map
 }
@@ -414,7 +359,7 @@ getGrowthPlots <- function(growthData){
   G1 <- G1 + labs(y='Enplanements', x='Year', title='Enplanements by Year')
   G1 <- G1 + scale_x_continuous(breaks=growthData$year) + scale_y_continuous(labels = scales::comma)
   G1 <- G1 + theme_new()
-  
+
   G2 <- ggplot(growthData, aes(x = year, y = crossBorder_tours)) + geom_line(color="royalblue", size=0.75, linetype=2) + geom_point(color="blue", size = 3)
   G2 <- G2 + labs(y='Tours', x='Year', title='Cross-Border Tours by Year')
   G2 <- G2 + scale_x_continuous(breaks=growthData$year) + scale_y_continuous(labels = scales::comma)
@@ -460,128 +405,4 @@ theme_new <- function(){
     legend.position = "top",
     legend.text = element_text(size=20)
   )
-}
-
-getLeafletPlots <- function(taz_shape){
-  opts <- providerTileOptions(opacity = 0)
-  
-  popup1 <- paste0("<strong>TAZ: </strong>", taz_shape$TAZ,  
-                   "<br><strong>Military Emp: </strong>", taz_shape$emp_fed_mil,
-                   "<br><strong>Total Emp: </strong>", taz_shape$emp_total)
-  pal1 <- c("#F1F1F1", brewer.pal(5, "YlOrBr"))
-  
-  taz_shape$mil_emp_density <- ifelse(taz_shape$acres > 0, taz_shape$emp_fed_mil/taz_shape$acres, 0)
-  taz_shape$mil_emp_cat <- cut(taz_shape$mil_emp_density, c(0,0.0000001,1,5,10,20,1000), labels=c("None", "< 1.0", "1.0 - 5.0", "5.0 - 10.0", "10.0 - 20.0", "> 20.0"), include.lowest=FALSE, right=FALSE)
-  
-  M1 <- leaflet(taz_shape) %>% addProviderTiles("CartoDB.PositronNoLabels", options = opts)
-  M1 <- M1 %>% addPolygons(fillColor = ~colorFactor(pal1, taz_shape$mil_emp_cat)(mil_emp_cat), fillOpacity = 0.8, 
-                           weight = 0.5, popup = popup1, color = "#d7d7db")
-  
-  M1 <- M1 %>% addLegend("bottomleft", title = "Employment/Acre", pal = colorFactor(pal1, NULL), values = ~mil_emp_cat)
-  M1 <- M1 %>% setView(-116.88, 32.98, 9)
-  
-  popup2 <- paste0("<strong>TAZ: </strong>", taz_shape$TAZ, 
-                   "<br><strong>Military GQ: </strong>", taz_shape$gq_mil)
-  pal2 <- c("#F1F1F1", brewer.pal(4, "YlOrBr"))
-  
-  taz_shape$mil_gq_cat <- cut(taz_shape$gq_mil, c(0,1,4000,6000,10000,50000), labels=c("None", "< 4000", "4000 - 6000", "6000 - 10000", "> 10000"), include.lowest=FALSE, right=FALSE)
-  M2 <- leaflet(taz_shape) %>% addProviderTiles("CartoDB.PositronNoLabels", options = opts)
-  M2 <- M2 %>% addPolygons(fillColor = ~colorFactor(pal2, taz_shape$mil_gq_cat)(mil_gq_cat), fillOpacity = 0.8, 
-                           weight = 0.5, popup = popup2, color = "#d7d7db")
-  
-  M2 <- M2 %>% addLegend("bottomleft", title = "Military GQ", pal = colorFactor(pal2, NULL), values = ~mil_gq_cat)
-  M2 <- M2 %>% setView(-116.88, 32.98, 9)
-  
-  popup3 <- paste0("<strong>TAZ: </strong>", taz_shape$TAZ, 
-                   "<br><strong>Enrollment (K to 8): </strong>", taz_shape$EnrollGradeKto8)
-  pal3 <- c("#F1F1F1", brewer.pal(4, "YlOrBr"))
-  
-  taz_shape$enroll_kto8_cat <- cut(taz_shape$EnrollGradeKto8, c(0,1,300,800,1000,50000), labels=c("None", "< 300", "300 - 800", "800 - 1000", "> 1000"), include.lowest=FALSE, right=FALSE)
-  
-  M3 <- leaflet(taz_shape) %>% addProviderTiles("CartoDB.PositronNoLabels", options = opts)
-  M3 <- M3 %>% addPolygons(fillColor = ~colorFactor(pal3, taz_shape$enroll_kto8_cat)(enroll_kto8_cat), fillOpacity = 0.8, 
-                           weight = 0.5, popup = popup3, color = "#d7d7db")
-  
-  M3 <- M3 %>% addLegend("bottomleft", title = "Enrollment", pal = colorFactor(pal3, NULL), values = ~enroll_kto8_cat)
-  M3 <- M3 %>% setView(-116.88, 32.98, 9)
-  
-  popup4 <- paste0("<strong>TAZ: </strong>", taz_shape$TAZ,
-                   "<br><strong>Enrollment (9 to 12): </strong>", taz_shape$EnrollGrade9to12)
-  pal4 <- c("#F1F1F1", brewer.pal(4, "YlOrBr"))
-  
-  taz_shape$enroll_9to12_cat <- cut(taz_shape$EnrollGrade9to12, c(0,1,300,800,1000,50000), labels=c("None", "< 300", "300 - 800", "800 - 1000", "> 1000"), include.lowest=FALSE, right=FALSE)
-  
-  M4 <- leaflet(taz_shape) %>% addProviderTiles("CartoDB.PositronNoLabels", options = opts)
-  
-  M4 <- M4 %>% addPolygons(fillColor = ~colorFactor(pal4, taz_shape$enroll_9to12_cat)(enroll_9to12_cat), fillOpacity = 0.8, 
-                           weight = 0.5, popup = popup4, color = "#d7d7db")
-  
-  M4 <- M4 %>% addLegend("bottomleft", title = "Enrollment", pal = colorFactor(pal4, NULL), values = ~enroll_kto8_cat)
-  M4 <- M4 %>% setView(-116.88, 32.98, 9)
-  
-  popup5 <- paste0("<strong>TAZ: </strong>", taz_shape$TAZ, 
-                   "<br><strong>College Enrollment: </strong>", taz_shape$collegeEnroll)
-  pal5 <- c("#F1F1F1", brewer.pal(2, "YlOrBr"))
-  
-  taz_shape$enroll_college_cat <- cut(taz_shape$collegeEnroll, c(0,1,5000,50000), labels=c("None", "< 5000", ">= 5000"), include.lowest=FALSE, right=FALSE)
-  
-  M5 <- leaflet(taz_shape) %>% addProviderTiles("CartoDB.PositronNoLabels", options = opts)
-  M5 <- M5 %>% addPolygons(fillColor = ~colorFactor(pal5, taz_shape$enroll_college_cat)(enroll_college_cat), fillOpacity = 0.8, 
-                           weight = 0.5, popup = popup5, color = "#d7d7db")
-  
-  M5 <- M5 %>% addLegend("bottomleft", title = "Enrollment", pal = colorFactor(pal5, NULL), values = ~enroll_college_cat)
-  M5 <- M5 %>% setView(-116.88, 32.98, 9)
-  
-  popup6 <- paste0("<strong>TAZ: </strong>", taz_shape$TAZ, 
-                   "<br><strong>Other College Enrollment: </strong>", taz_shape$otherCollegeEnroll)
-  pal6 <- c("#F1F1F1", brewer.pal(2, "YlOrBr"))
-  
-  taz_shape$enroll_other_college_cat <- cut(taz_shape$otherCollegeEnroll, c(0,1,5000,50000), labels=c("None", "< 5000", ">= 5000"), include.lowest=FALSE, right=FALSE)
-  
-  M6 <- leaflet(taz_shape) %>% addProviderTiles("CartoDB.PositronNoLabels", options = opts)
-  
-  M6 <- M6 %>% addPolygons(fillColor = ~colorFactor(pal6, taz_shape$enroll_other_college_cat)(enroll_other_college_cat), fillOpacity = 0.8, 
-                           weight = 0.5, popup = popup6, color = "#d7d7db")
-  
-  M6 <- M6 %>% addLegend("bottomleft", title = "Enrollment", pal = colorFactor(pal6, NULL), values = ~enroll_other_college_cat)
-  
-  M6 <- M6 %>% setView(-116.88, 32.98, 9)
-  
-  popup7 <- paste0("<strong>TAZ: </strong>", taz_shape$TAZ, 
-                   "<br><strong>College Students: </strong>", taz_shape$college_students)
-  pal7 <- c("#F1F1F1", brewer.pal(4, "YlOrBr"))
-  
-  taz_shape$college_student_cat <- cut(taz_shape$college_students, c(0,1,100,500,1000,50000), labels=c("None", "< 100", "100 - 500", "500 - 1000", " > 1000"), include.lowest=FALSE, right=FALSE)
-  
-  M7 <- leaflet(taz_shape) %>% addProviderTiles("CartoDB.PositronNoLabels", options = opts)
-  M7 <- M7 %>% addPolygons(fillColor = ~colorFactor(pal7, taz_shape$college_student_cat)(college_student_cat), fillOpacity = 0.8, 
-                           weight = 0.5, popup = popup7, color = "#d7d7db")
-  
-  M7 <- M7 %>% addLegend("bottomleft", title = "College Students", pal = colorFactor(pal7, NULL), values = ~college_student_cat)
-  M7 <- M7 %>% setView(-116.88, 32.98, 9)
-  
-  popup8 <- paste0("<strong>TAZ: </strong>", taz_shape$TAZ, 
-                   "<br><strong>Population Density: </strong>", taz_shape$PopDen)
-  pal8 <- c("#F1F1F1", brewer.pal(4, "YlOrBr"))
-  
-  taz_shape$pop_density_cat <- cut(taz_shape$PopDen, c(0,0.00001,10,20,40,1000), labels=c("None", "< 10", "10 - 20", "20 - 40", "> 40"), include.lowest=FALSE, right=FALSE)
-  
-  M8 <- leaflet(taz_shape) %>% addProviderTiles("CartoDB.PositronNoLabels", options = opts)
-  M8 <- M8 %>% addPolygons(fillColor = ~colorFactor(pal8, taz_shape$pop_density_cat)(pop_density_cat), weight = 0, popup = popup8, fillOpacity = 0.8)
-  M8 <- M8 %>% addLegend("bottomleft", title = "Pop Density", pal = colorFactor(pal8, NULL), values = ~pop_density_cat)
-  M8 <- M8 %>% setView(-116.88, 32.98, 9)
-  
-  popup9 <- paste0("<strong>TAZ: </strong>", taz_shape$TAZ, 
-                   "<br><strong>Average Income: </strong>", taz_shape$income)
-  pal9 <- c("#F1F1F1", brewer.pal(5, "YlOrBr"))
-  
-  taz_shape$income_cat <- cut(taz_shape$income, c(0,1,30000,60000,100000,150000,10000000), labels=c("None", "< 30K", "30K - 60K", "60K - 100K", "100K - 150K", "> 150K"), include.lowest=FALSE, right=FALSE)
-  M9 <- leaflet(taz_shape) %>% addProviderTiles("CartoDB.PositronNoLabels", options = opts)
-  M9 <- M9 %>% addPolygons(fillColor = ~colorFactor(pal9, taz_shape$income_cat)(income_cat), fillOpacity = 0.8, 
-                           weight = 0.5, popup = popup9, color = "")
-  
-  M9 <- M9 %>% addLegend("bottomleft", title = "Average Income", pal = colorFactor(pal9, NULL), values = ~income_cat)
-  M9 <- M9 %>% setView(-116.88, 32.98, 9)
-  
-  return(list(M1, M2, M3, M4, M5, M6, M7, M8, M9))
 }

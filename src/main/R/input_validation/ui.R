@@ -2,9 +2,10 @@ library(shiny)
 library(shinydashboard)
 
 source('directoryInput.R')
+source('properties.R')
 
 header <- dashboardHeader(
-            title = "Input Monitoring Tool - SANDAG",
+            title = paste("Input Monitoring Tool", client.name, sep = " - "),
             titleWidth = 320
 )
 
@@ -17,8 +18,11 @@ sidebar <- dashboardSidebar(
               tags$hr(),
               directoryInput("inputDir", label = "Select Input Location", value = ""),
               
+              conditionalPanel("input.inputType == 'Highway Network' || input.inputType == 'Transit Network'", 
+                               checkboxInput("buildNetwork", "Build Network", FALSE)),
+              
               tags$hr(),
-              fluidRow(column(6, align="center", offset = 3, actionButton("action", "RUN")))
+              conditionalPanel("input.mainTabs > 0", fluidRow(column(6, align="center", offset = 3, actionButton("action", "RUN"))))
 )
   
 body <- dashboardBody(
