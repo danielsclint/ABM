@@ -235,13 +235,13 @@ public class AirportTripTables
      * SandagTripTables object.
      * 
      */
-    public void createTripTables(MatrixType mt)
+    public void createTripTables(MatrixType mt, String airportCode)
     {
 
         String directory = Util.getStringValueFromPropertyMap(rbMap, "scenario.path");
 
         // Open the individual trip file
-        String tripFile = Util.getStringValueFromPropertyMap(rbMap, "airport.output.file");
+        String tripFile = Util.getStringValueFromPropertyMap(rbMap, "airport."+airportCode+".output.file");
         tripData = openTripFile(directory + tripFile);
 
         // Iterate through periods so that we don't have to keep
@@ -256,7 +256,7 @@ public class AirportTripTables
             processTrips(i, tripData);
 
             logger.info("Begin writing matrices");
-            writeTrips(i, mt);
+            writeTrips(i, mt, airportCode);
             logger.info("End writingMatrices");
 
         }
@@ -424,7 +424,7 @@ public class AirportTripTables
      *            Time period, which will be used to find the period time string
      *            to append to each trip table matrix file
      */
-    public void writeTrips(int period, MatrixType mt)
+    public void writeTrips(int period, MatrixType mt, String airportCode)
     {
 
         String directory = Util.getStringValueFromPropertyMap(rbMap, "scenario.path");
@@ -433,13 +433,13 @@ public class AirportTripTables
         String[] fileName = new String[4];
 
         fileName[0] = directory
-                + Util.getStringValueFromPropertyMap(rbMap, "airport.results.autoTripMatrix") + end;
+                + Util.getStringValueFromPropertyMap(rbMap, "airport."+airportCode+".results.autoTripMatrix") + end;
         fileName[1] = directory
-                + Util.getStringValueFromPropertyMap(rbMap, "airport.results.nMotTripMatrix") + end;
+                + Util.getStringValueFromPropertyMap(rbMap, "airport."+airportCode+".results.nMotTripMatrix") + end;
         fileName[2] = directory
-                + Util.getStringValueFromPropertyMap(rbMap, "airport.results.tranTripMatrix") + end;
+                + Util.getStringValueFromPropertyMap(rbMap, "airport."+airportCode+".results.tranTripMatrix") + end;
         fileName[3] = directory
-                + Util.getStringValueFromPropertyMap(rbMap, "airport.results.othrTripMatrix") + end;
+                + Util.getStringValueFromPropertyMap(rbMap, "airport."+airportCode+".results.othrTripMatrix") + end;
 
         for (int i = 0; i < 4; ++i)
             ms.writeMatrixFile(fileName[i], matrix[i], mt);
@@ -538,6 +538,7 @@ public class AirportTripTables
 
         HashMap<String, String> pMap;
         String propertiesFile = null;
+        String airportCode = null;
 
         logger.info(String.format(
                 "SANDAG Airport Model Trip Table Generation Program using CT-RAMP version %s",
@@ -566,9 +567,13 @@ public class AirportTripTables
             {
                 iteration = Integer.parseInt(args[i + 1]);
             }
+            if (args[i].equalsIgnoreCase("-airport"))
+            {
+            	airportCode = args[i + 1];
+            }
         }
         
-        logger.info("Airport Model Trip Table:"+String.format("-sampleRate %.4f.", sampleRate)+"-iteration  " + iteration);
+        logger.info("Airport Model ("+airportCode+")Trip Table:"+String.format("-sampleRate %.4f.", sampleRate)+"-iteration  " + iteration);
         
         tripTables.setSampleRate(sampleRate);
                 
@@ -642,7 +647,7 @@ public class AirportTripTables
 
         }
 
-        tripTables.createTripTables(mt);
+        tripTables.createTripTables(mt,airportCode);
 
         // if a separate process for running matrix data mnager was started,
         // we're

@@ -76,12 +76,12 @@ public class AirportModel
         apm.generateAirportParties();
         AirportParty[] parties = apm.getParties();
 
-        AirportDestChoiceModel destChoiceModel = new AirportDestChoiceModel(rbMap, dmuFactory);
+        AirportDestChoiceModel destChoiceModel = new AirportDestChoiceModel(rbMap, dmuFactory, airportCode);
         destChoiceModel.calculateMgraProbabilities(dmuFactory);
         destChoiceModel.calculateTazProbabilities(dmuFactory);
         destChoiceModel.chooseOrigins(parties);
 
-        AirportModeChoiceModel modeChoiceModel = new AirportModeChoiceModel(rbMap, dmuFactory);
+        AirportModeChoiceModel modeChoiceModel = new AirportModeChoiceModel(rbMap, dmuFactory, airportCode);
         modeChoiceModel.initializeBestPathCalculators();
         modeChoiceModel.chooseModes(parties, dmuFactory);
 
