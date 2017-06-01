@@ -35,6 +35,23 @@ public class AirportModel
     private HashMap<String, String> rbMap;
     private static float sampleRate;
     private static int iteration;
+    private String airportCode;
+
+    /**
+     * Get the airport code (a three-character code for the airport)
+     * @return the airport code
+     */
+	public String getAirportCode() {
+		return airportCode;
+	}
+
+	/** 
+	 * Set the airport code (a three-character code for the airport)
+	 * @param airportCode
+	 */
+	public void setAirportCode(String airportCode) {
+		this.airportCode = airportCode;
+	}
 
 	/**
      * Constructor
@@ -54,7 +71,7 @@ public class AirportModel
     {
         AirportDmuFactory dmuFactory = new AirportDmuFactory();
 
-        AirportPartyManager apm = new AirportPartyManager(rbMap, sampleRate);
+        AirportPartyManager apm = new AirportPartyManager(rbMap, sampleRate, airportCode);
 
         apm.generateAirportParties();
         AirportParty[] parties = apm.getParties();
@@ -68,9 +85,9 @@ public class AirportModel
         modeChoiceModel.initializeBestPathCalculators();
         modeChoiceModel.chooseModes(parties, dmuFactory);
 
-        apm.writeOutputFile(rbMap);
+        apm.writeOutputFile(rbMap, airportCode);
 
-        logger.info("Airport Model successfully completed!");
+        logger.info("Airport Model ("+airportCode+") successfully completed!");
 
     }
 
@@ -132,6 +149,7 @@ public class AirportModel
     {
 
         String propertiesFile = null;
+        String airportCode = null;
         HashMap<String, String> pMap;
 
         logger.info(String.format("SANDAG Activity Based Model using CT-RAMP version %s",
@@ -157,10 +175,14 @@ public class AirportModel
 	            {
 	                iteration = Integer.parseInt(args[i + 1]);
 	            }
+	            if (args[i].equalsIgnoreCase("-airport"))
+	            {
+	            	airportCode = args[i + 1];
+	            }
 	        }
         }
         
-        logger.info("Airport Model:"+String.format("-sampleRate %.4f.", sampleRate)+"-iteration  " + iteration);
+        logger.info("Airport Model ("+airportCode+"):"+String.format("-sampleRate %.4f.", sampleRate)+"-iteration  " + iteration);
 
         pMap = ResourceUtil.getResourceBundleAsHashMap(propertiesFile);
         AirportModel airportModel = new AirportModel(pMap, sampleRate);
@@ -236,7 +258,8 @@ public class AirportModel
             throw new RuntimeException();
 
         }
-
+  
+        airportModel.setAirportCode(airportCode);
         airportModel.runModel();
 
         // if a separate process for running matrix data mnager was started,
