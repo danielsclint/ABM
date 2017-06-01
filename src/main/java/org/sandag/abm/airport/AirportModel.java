@@ -18,6 +18,12 @@ import com.pb.common.calculator.MatrixDataManager;
 import com.pb.common.matrix.MatrixType;
 import com.pb.common.util.ResourceUtil;
 
+/**
+ * Revised for CBX and SAN separately.
+ * 
+ * @author joel.freedman
+ *
+ */
 public class AirportModel
 {
 
