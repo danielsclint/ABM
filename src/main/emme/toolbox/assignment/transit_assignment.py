@@ -472,27 +472,32 @@ class TransitAssignment(_m.Tool(), gen_utils.Snapshot):
                     },
                 }
                 matrix_results(spec, class_name=class_name, scenario=scenario, num_processors=num_processors)
-            with _m.logbook_trace("Distance by mode"):
-                if name.endswith("ALL"):
-                    mode_combinations = [
-                        ("BUS", ["b"]),
-                        ("LRT", ["l"]),
-                        ("CMR", ["c"]),
-                        ("EXP", ["e", "p"]),
-                        ("BRT", ["r", "y"]),
-                    ]
+            with _m.logbook_trace("Distance by mode and in-vehicle travel time by mode"):
+                if name.endswith("ALL"): 
+					mode_combinations = [
+						("BUS",    ["b"],      ["IVTT", "DIST"]),
+						("LRT",    ["l"],      ["IVTT", "DIST"]),
+						("CMR",    ["c"],      ["IVTT", "DIST"]),
+						("EXP",    ["e", "p"], ["IVTT", "DIST"]),
+						("BRT",    ["r", "y"], ["DIST"]),
+						("BRTRED", ["r"],      ["IVTT"]),
+						("BRTYEL", ["y"],      ["IVTT"]),
+					]
                 else:
-                    mode_combinations = [("", ["b"])]
+                    mode_combinations = [("", ["b"], ["DIST"])]
 
-                for mode_name, modes in mode_combinations:
-                    spec = {
-                        "type": "EXTENDED_TRANSIT_MATRIX_RESULTS",
-                        "by_mode_subset": {
-                            "modes": modes,  
-                            "distance": 'mf"%s_%sDIST"' % (name, mode_name),
-                        },
-                    }
-                    matrix_results(spec, class_name=class_name, scenario=scenario, num_processors=num_processors)
+            for mode_name, modes, skim_types in mode_combinations:
+                dist = 'mf"%s_%sDIST"' % (name, mode_name) if "DIST" in skim_types else None
+                ivtt = 'mf"%s_%sIVTT"' % (name, mode_name) if "IVTT" in skim_types else None
+                spec = {
+                    "type": "EXTENDED_TRANSIT_MATRIX_RESULTS",
+                    "by_mode_subset": {
+                        "modes": modes,
+                        "distance": dist,
+                        "actual_in_vehicle_times": ivtt,
+                    },
+                }
+                matrix_results(spec, class_name=class_name, scenario=scenario, num_processors=num_processors)
 
             # convert number of boardings to number of transfers
             # subtract transfers to the same line at layover points
@@ -601,7 +606,7 @@ class TransitAssignment(_m.Tool(), gen_utils.Snapshot):
             matrix_calc(spec, scenario=scenario, num_processors=num_processors)
 
         with _m.logbook_trace("In-vehicle time breakdown - dwell time and by main mode(s)"):
-            with gen_utils.temp_attrs(scenario, "TRANSIT_SEGMENT", ["@dwt_for_analysis", "@tm_for_analysis"]):
+            with gen_utils.temp_attrs(scenario, "TRANSIT_SEGMENT", ["@dwt_for_analysis"]):
                 values = scenario.get_attribute_values(
                     "TRANSIT_SEGMENT", ["dwell_time"])
                 scenario.set_attribute_values(
@@ -621,55 +626,7 @@ class TransitAssignment(_m.Tool(), gen_utils.Snapshot):
                     "type": "EXTENDED_TRANSIT_STRATEGY_ANALYSIS"
                 }
                 strategy_analysis(spec, class_name=class_name, scenario=scenario, num_processors=num_processors)
-                
-                spec = {
-                    "type": "MATRIX_CALCULATION", 
-                    "constraint":{
-                        "by_value": {
-                            "od_values": 'mf"%s_TOTALIVTT"' % name, 
-                            "interval_min": 0, "interval_max": 9999999, 
-                            "condition": "INCLUDE"},
-                    },
-                    "result": 'mf"%s_TOTALIVTT"' % name, 
-                    "expression": '(%s_TOTALIVTT - %s_DWELLTIME).max.0' % (name, name),
-                }
-                matrix_calc(spec, scenario=scenario, num_processors=num_processors)
 
-                if name.endswith("ALL"):
-                    strat_analysis_spec = {
-                        "trip_components": {"in_vehicle": "@tm_for_analysis"},
-                        "sub_path_combination_operator": "+",
-                        "sub_strategy_combination_operator": "average",
-                        "selected_demand_and_transit_volumes": {
-                            "sub_strategies_to_retain": "ALL",
-                            "selection_threshold": {"lower": -999999, "upper": 999999}
-                        },
-                        "results": {"strategy_values": None},
-                        "type": "EXTENDED_TRANSIT_STRATEGY_ANALYSIS"
-                    }
-                    network_calc_spec = {
-                        "result": "@tm_for_analysis",
-                        "expression": "timtr - dwtn",
-                        "selections": {"transit_line": "all", "link": "all"},
-                        "aggregation": None,
-                        "type": "NETWORK_CALCULATION"
-                    }
-                    mode_names = [
-                        ("mode=c", "CMRIVTT"), 
-                        ("mode=e", "EXPIVTT"), 
-                        ("mode=l", "LRTIVTT"), 
-                        ("mode=p", "LTDEXPIVTT"), 
-                        ("mode=b", "BUSIVTT"),
-                        ("mode=y", "BRTYELIVTT"),
-                        ("mode=r", "BRTREDIVTT"),
-                    ] 
-                    for selection, m_name in mode_names:
-                        scenario.extra_attribute("@tm_for_analysis").initialize(0)
-                        network_calc_spec["selections"]["transit_line"] = selection 
-                        network_calc(network_calc_spec, scenario=scenario)
-                        strat_analysis_spec["results"]["strategy_values"] = '%s_%s' % (name, m_name)
-                        strategy_analysis(strat_analysis_spec, class_name=class_name, 
-                                          scenario=scenario, num_processors=num_processors)
         return
 
     def _init_node_id(self, network):
