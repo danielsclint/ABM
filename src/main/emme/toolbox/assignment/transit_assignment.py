@@ -486,18 +486,18 @@ class TransitAssignment(_m.Tool(), gen_utils.Snapshot):
                 else:
                     mode_combinations = [("", ["b"], ["DIST"])]
 
-            for mode_name, modes, skim_types in mode_combinations:
-                dist = 'mf"%s_%sDIST"' % (name, mode_name) if "DIST" in skim_types else None
-                ivtt = 'mf"%s_%sIVTT"' % (name, mode_name) if "IVTT" in skim_types else None
-                spec = {
-                    "type": "EXTENDED_TRANSIT_MATRIX_RESULTS",
-                    "by_mode_subset": {
-                        "modes": modes,
-                        "distance": dist,
-                        "actual_in_vehicle_times": ivtt,
-                    },
-                }
-                matrix_results(spec, class_name=class_name, scenario=scenario, num_processors=num_processors)
+				for mode_name, modes, skim_types in mode_combinations:
+					dist = 'mf"%s_%sDIST"' % (name, mode_name) if "DIST" in skim_types else None
+					ivtt = 'mf"%s_%sIVTT"' % (name, mode_name) if "IVTT" in skim_types else None
+					spec = {
+						"type": "EXTENDED_TRANSIT_MATRIX_RESULTS",
+						"by_mode_subset": {
+							"modes": modes,
+							"distance": dist,
+							"actual_in_vehicle_times": ivtt,
+						},
+					}
+					matrix_results(spec, class_name=class_name, scenario=scenario, num_processors=num_processors)
 
             # convert number of boardings to number of transfers
             # subtract transfers to the same line at layover points
