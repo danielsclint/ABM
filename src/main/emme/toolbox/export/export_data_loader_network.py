@@ -364,12 +364,12 @@ Export network results to csv files for SQL data loader."""
             ("AB_Flow_SR3_GP", "@hov3gp"),
             ("AB_Flow_SR3_HOV", "@hov3hov"),
             ("AB_Flow_SR3_PAY", "@hov3toll"),
-            ("AB_Flow_lhdn", "@trklgp"),
-            ("AB_Flow_mhdn", "@trkmgp"),
-            ("AB_Flow_hhdn", "@trkhgp"),
-            ("AB_Flow_lhdt", "@trkltoll"),
-            ("AB_Flow_mhdt", "@trkmtoll"),
-            ("AB_Flow_hhdt", "@trkhtoll"),
+            ("AB_Flow_lhdn", "@trklgp_non_pce"),
+            ("AB_Flow_mhdn", "@trkmgp_non_pce"),
+            ("AB_Flow_hhdn", "@trkhgp_non_pce"),
+            ("AB_Flow_lhdt", "@trkltoll_non_pce"),
+            ("AB_Flow_mhdt", "@trkmtoll_non_pce"),
+            ("AB_Flow_hhdt", "@trkhtoll_non_pce"),
             ("AB_Flow", "@non_pce_flow"),
         ]
         for key, attr in dir_atts:
@@ -382,6 +382,12 @@ Export network results to csv files for SQL data loader."""
                         ("@voc", "volume over capacity", "@auto_volume/ul3"),
                         ("@vht", "vehicle hours travelled", "@auto_volume*timau/60"),
                         ("@speed", "link travel speed", "length*60/timau"),
+						("@trklgp_non_pce",   "light trucks vehicles", "(@trklgp)/1.3" ),	
+                        ("@trkltoll_non_pce", "toll light trucks vehicles", "(@trkltoll)/1.3" ),
+                        ("@trkmgp_non_pce",   "medium trucks vehicles", "(@trkmgp)/1.5" ),	
+                        ("@trkmtoll_non_pce", "toll medium trucks vehicles", "(@trkmtoll)/1.5" ),
+                        ("@trkhgp_non_pce",   "heavy trucks vehicles", "(@trkhgp)/2.5" ),	
+                        ("@trkhtoll_non_pce", "toll heavy trucks vehicles", "(@trkhtoll)/2.5" ),	
                         ("@pce_flow", "total number of vehicles in Pce",
                                  "@sovgp+@sovtoll+ \
                                   @hov2gp+@hov2hov+@hov2toll+ \
